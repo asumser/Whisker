@@ -1,4 +1,4 @@
-function [NumSD,rates_to_plot,plot_x,name_vars,PhaseMod,whisker_corrs,name_whisker_corrs,neuron_correlations_with_params]=get_whisking_in_air_modulation(bins,min_t,DiscreteData,exclude,include,safety_margin,ppms,amp_thresh,Amp,Setp,Angle,Phase)
+function [NumSD,rates_to_plot,plot_x,name_vars,PhaseMod,whisker_corrs,name_whisker_corrs,neuron_correlations_with_params]=get_whisking_in_air_modulation_norm(bins,min_t,DiscreteData,exclude,include,safety_margin,ppms,amp_thresh,Amp,Setp,Angle,Phase)
 
 
 DDc=struct2cell(DiscreteData);
@@ -8,15 +8,15 @@ SpikesSelected=cleanup_sections_exclusive(DiscreteData,exclude,safety_margin*ppm
 
 phasebins=linspace(-pi,pi,bins{1}+1);
 ampbins=bins{2};%0:3:65;
-ampbinsp=ampbins(1:end-1)+1;
+ampbinsp=ampbins(1:end-1);
 abssetpbins=bins{3};%0:3:40;
-abssetpbinsp=abssetpbins(1:end-1)+1;
+abssetpbinsp=abssetpbins(1:end-1);
 absangbins=bins{4};%0:3:65;
-absangbinsp=absangbins(1:end-1)+1;
+absangbinsp=absangbins(1:end-1);
 setpbins=bins{5};%-30:3:40;
-setpbinsp=setpbins(1:end-1)+1;
+setpbinsp=setpbins(1:end-1);
 angbins=bins{6};%-40:3:65;
-angbinsp=angbins(1:end-1)+1;
+angbinsp=angbins(1:end-1);
 wh_vars=cell(size(bins));
 Rateamp=nan(size(DiscreteData,2),numel(ampbins)-1);
 Ratesetp=nan(size(DiscreteData,2),numel(setpbins)-1);
@@ -56,11 +56,16 @@ for r=1:size(DiscreteData,2)
         randspontIndW=unique(interp1(tl,1:numel(tl),tlE(spont_idx{r}),'nearest'));
         if numel(randspontIndW)>0
             amp=Amp{r};
-            setp=Setp{r};setp=setp-median(setp,'omitnan');
+            setp=Setp{r};
+            setp=setp-median(setp,'omitnan');
             abssetp=abs(setp);
-            Wangle=Angle{r};Wangle=Wangle-median(Wangle,'omitnan');
+            setp=normalize(setp,'range');
+            abssetp=normalize(abssetp,'range');
+            Wangle=Angle{r};
+            Wangle=Wangle-median(Wangle,'omitnan');
             absWangle=abs(Wangle);
-            
+            Wangle=normalize(Wangle,'range');
+            absWangle=normalize(absWangle,'range');
             [Amp_SD]=histcounts(amp(randspontIndW),ampbins);
             NumSD{1}(r,:)=Amp_SD;
             Amp_SD(Amp_SD<min_t)=nan;

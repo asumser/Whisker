@@ -441,37 +441,35 @@ figure
 plot(plot_x{1},rates_to_plot{1}(vpmr,:),'Color',[.75 .75 .75]);hold on
 %%
 figure('Position',[148         198        1593         688])
-tt= tiledlayout(2,6);
+tt= tiledlayout(3,6);
 title(tt,'mean whisking in air correlations')
 for v=1:numel(rates_to_plot)
-    
+    nexttile(v);
     for c=1:numel(cell_select)
-        nexttile(v+numel(rates_to_plot)*(c-1));
        % sel=sum(~isnan(rates_to_plot{v}(cell_select{c},:)),1)>min_pointsN;
-       plot(plot_x{v},rates_to_plot{v}(cell_select{c},:),'Color',[.75 .75 .75]);hold on
+       plot(plot_x{1},rates_to_plot{1}(vpmr,:),'Color',[.75 .75 .75]);hold on
        % stA=std(rates_to_plot{v}(cell_select{c},sel),0,1,'omitnan')./sqrt(sum(~isnan(rates_to_plot{v}(cell_select{c},sel)),1));
         mA=mean(rates_to_plot{v}(cell_select{c},:),1,'omitnan');
 %         SA=cat(2,mA-stA,fliplr(mA+stA));
 %         plotSA=cat(2,plot_x{v}(sel),fliplr(plot_x{v}(sel)));
-%         fill(plotSA,SA,cell_colors{c},'FaceAlpha',.25,'EdgeColor','none');hold on
-        plot(plot_x{v},mA,cell_colors{c});hold off;box off
-         ylabel('mean Rate (Hz)');
+        fill(plotSA,SA,cell_colors{c},'FaceAlpha',.25,'EdgeColor','none');hold on
+        plot(plot_x{v}(sel),mA,cell_colors{c});hold on;box off
+    end
+    ylabel('mean Rate (Hz)');
     xlabel(name_vars{v});
     title(name_vars{v})
     xlim(plot_x{v}([1 end]));
-    end
-   
-%     ms=prctile(rates_to_plot{v}(cat(1,cell_select{:}),:),99,'all');
-%     nexttile(v+numel(rates_to_plot));
-%     imagesc(plot_x{v},1:numel(cell_select{1}),rates_to_plot{v}(cell_select{1},:),[0 ms]);title([cell_select_names{1} ' ' name_vars{v}]);box off;colormap(CustomColormap);
-%     xlim(plot_x{v}([1 end]));
-%     colorbar;
-%     nexttile(v+2*numel(rates_to_plot));
-%     imagesc(plot_x{v},1:numel(cell_select{2}),rates_to_plot{v}(cell_select{2},:),[0 ms]);title([cell_select_names{2} ' ' name_vars{v}]);box off;colormap(CustomColormap);
-%     xlim(plot_x{v}([1 end]));
-%     colorbar;
+    ms=prctile(rates_to_plot{v}(cat(1,cell_select{:}),:),99,'all');
+    nexttile(v+numel(rates_to_plot));
+    imagesc(plot_x{v},1:numel(cell_select{1}),rates_to_plot{v}(cell_select{1},:),[0 ms]);title([cell_select_names{1} ' ' name_vars{v}]);box off;colormap(CustomColormap);
+    xlim(plot_x{v}([1 end]));
+    colorbar;
+    nexttile(v+2*numel(rates_to_plot));
+    imagesc(plot_x{v},1:numel(cell_select{2}),rates_to_plot{v}(cell_select{2},:),[0 ms]);title([cell_select_names{2} ' ' name_vars{v}]);box off;colormap(CustomColormap);
+    xlim(plot_x{v}([1 end]));
+    colorbar;
 end
-if write_figs;exportgraphics (gcf,[figdir Fig_no 'response_relative_to_whisking_in_air.pdf'], 'BackgroundColor','none','ContentType','vector');end
+
 %%
 cell_select={vpmra;pomra};
 figure('Position',[680   558   560   420],'Color','white')
