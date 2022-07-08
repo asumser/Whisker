@@ -10,7 +10,7 @@ bins=-split_time_before_trig:split_binsize:split_time_after_trig;
 pbins=bins(1:end-1);
 pbins=pbins+mean(diff(pbins)/2);
 binsR=[-50 0 50];
-split_var_nameC={'Interval';'Curvature';'Acceleration';'Velocity'};
+split_var_nameC={'Interval';'Curvature';'Acceleration';'Velocity';'Amp_extrema';'Amp'};
 % splits={[0 25 50 75 100];[0 100/3 200/3 100];[0 50 100]};
 % splitname={'Quartile';'Tertile';'median'};
 splits={[0 100/3 200/3 100]};
@@ -34,8 +34,8 @@ selc={vpmr;pomr};
 selN={'VPM';'POm'};
 selS={'Puff';'Touch'};
 %%
-
-for SN=1:numel(split_var_nameC)
+offset=10*20;
+for SN=5:numel(split_var_nameC)
     split_var_name=split_var_nameC{SN};
     % smoothker1=[1:1000 999:-1:0];
     % smoothkerLU=linspace(-smoothwidth/2,smoothwidth/2,numel(smoothker1));
@@ -84,7 +84,7 @@ for SN=1:numel(split_var_nameC)
             sp_tr_P=cellfun(@(x) mean(x,2,'omitnan')',sp_tr_P,'UniformOutput',0);
             [~,sp_tr_T]=get_trig_cont_pop(T_trig,pbins(pbins<25 & pbins>0),a,20,DiscreteData);
             sp_tr_T=cellfun(@(x) mean(x,2,'omitnan')',sp_tr_T,'UniformOutput',0);
-        case {'Acceleration','Velocity','Amp_extrema'}
+        case {'Acceleration','Velocity','Amp_extrema','Amp'}
             a=load(Wdname, split_var_name);
             a=a.(split_var_name);
             %a=cellfun(@(x) x-median(x),a,'UniformOutput',0);

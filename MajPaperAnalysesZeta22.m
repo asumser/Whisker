@@ -520,25 +520,26 @@ Fig_no='Fig5_';
 parameter='Puff';
 exclude={'Pole';'Exclude';'Grooming'};
 include={{'Light'};[-5 35]};
-contPlot={MeanWpL,MeanPL,MeanL};
+contPlot={MeanWpL,MeanPL,MeanAL};
 figure('Position',[38 260 1413 525],'Color','White');Name='PuffLPop';
-plot_Pop_PSTH_wrapper3(parameter, DiscreteData,puff_triglength_limit,ppms,psth_time_before_trig,psth_time_after_trig,exclude,psth_safety_margin,psth_binsize,[],Name,{vpm;pom},{'VPM';'POm'},include,'latency',100,contPlot,{'meanbefore','scaleminmax','scaleminmax'},'baseline corr. whisker angle');
+plot_Pop_PSTH_wrapper3(parameter, DiscreteData,puff_triglength_limit,ppms,psth_time_before_trig,psth_time_after_trig,exclude,psth_safety_margin,psth_binsize,[],Name,{vpm;pom},{'VPM';'POm'},include,'latency',100,contPlot,{'meanbefore','scaleminmax','mono'},'baseline corr. whisker angle');
 exportgraphics(gcf,[figdir Fig_no 'Pop_all_' parameter '_L_instRateResp_' datestr(now,'yymmdd') '.pdf'],'BackgroundColor','none')
 figure('Position',[38 260 1413 525],'Color','White');Name='PuffLPopAllR';
-plot_Pop_PSTH_wrapper3(parameter, DiscreteData,puff_triglength_limit,ppms,psth_time_before_trig,psth_time_after_trig,exclude,psth_safety_margin,psth_binsize,[],Name,{vpmra;pomra},{'VPM';'POm'},include,'latency',100,contPlot,{'meanbefore','scaleminmax','scaleminmax'},'baseline corr. whisker angle');
+plot_Pop_PSTH_wrapper3(parameter, DiscreteData,puff_triglength_limit,ppms,psth_time_before_trig,psth_time_after_trig,exclude,psth_safety_margin,psth_binsize,[],Name,{vpmra;pomra},{'VPM';'POm'},include,'latency',100,contPlot,{'meanbefore','scaleminmax','mono'},'baseline corr. whisker angle');
 exportgraphics(gcf,[figdir Fig_no 'Pop_puff_responsive_' parameter '_L_instRateResp_' datestr(now,'yymmdd') '.pdf'],'BackgroundColor','none')
 vpmL=vpm(hasLight(vpm));
 pomL=pom(hasLight(pom));
 vpmrLa=vpmra(hasLight(vpmra));
 pomrLa=pomra(hasLight(pomra));
-contPlot={MeanWp,MeanP};
+
+contPlot={MeanWp,MeanP,MeanAp};
 exclude={'Pole';'Light';'Exclude';'Grooming'};
 include=[];
 figure('Position',[38 260 1413 525],'Color','White');Name='PuffLPop';
-plot_Pop_PSTH_wrapper3(parameter, DiscreteData,puff_triglength_limit,ppms,psth_time_before_trig,psth_time_after_trig,exclude,psth_safety_margin,psth_binsize,[],Name,{vpmL;pomL},{'VPM';'POm'},include,'latency',100,contPlot,{'meanbefore','scaleminmax','scaleminmax'},'baseline corr. whisker angle');
+plot_Pop_PSTH_wrapper3(parameter, DiscreteData,puff_triglength_limit,ppms,psth_time_before_trig,psth_time_after_trig,exclude,psth_safety_margin,psth_binsize,[],Name,{vpmL;pomL},{'VPM';'POm'},include,'latency',100,contPlot,{'meanbefore','scaleminmax','mono'},'baseline corr. whisker angle');
 exportgraphics(gcf,[figdir Fig_no 'Pop_all_' parameter '_nL_instRateResp_' datestr(now,'yymmdd') '.pdf'],'BackgroundColor','none')
-figure('Position',[38 260 1413 525],'Color','White');Name='PuffLPopAllR';
-plot_Pop_PSTH_wrapper3(parameter, DiscreteData,puff_triglength_limit,ppms,psth_time_before_trig,psth_time_after_trig,exclude,psth_safety_margin,psth_binsize,[],Name,{vpmrLa;pomrLa},{'VPM';'POm'},include,'latency',100,contPlot,{'meanbefore','scaleminmax','scaleminmax'},'baseline corr. whisker angle');
+figure('Position',[38 260 1413 525],'Color','White');Name='PuffnLPopAllR';
+plot_Pop_PSTH_wrapper3(parameter, DiscreteData,puff_triglength_limit,ppms,psth_time_before_trig,psth_time_after_trig,exclude,psth_safety_margin,psth_binsize,[],Name,{vpmrLa;pomrLa},{'VPM';'POm'},include,'latency',100,contPlot,{'meanbefore','scaleminmax','mono'},'baseline corr. whisker angle');
 exportgraphics(gcf,[figdir Fig_no 'Pop_puff_responsive_' parameter '_nL_instRateResp_' datestr(now,'yymmdd') '.pdf'],'BackgroundColor','none')
 
 trigLen=cellfun(@(x) ones(1,numel(x))*30*20,trigsPL,'UniformOutput',0);
@@ -578,7 +579,7 @@ tempD=cat(2,H_P(:,2),H_PL(:,2));tempD(any(isnan(tempD),2),:)=nan;
 figure('Position',[ 910   176   500   588])
 plot_ratecomp2(tempD,sig_PuffW,{'noLPuff','LPuff'},{vpmra;pomra},{'VPM';'POm'},'meansd','Rate [Hz]');title('nL/L Puff Response, responsive cells')
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'absRates_nLL_PuffRespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
-tempD=cat(2,H_P(:,2)./H_P(:,1),H_PL(:,2)./H_PL(:,1));tempD(any(isnan(tempD),2),:)=nan;
+tempD=cat(2,log2(H_P(:,2)./H_P(:,1)),log2(H_PL(:,2)./H_PL(:,1)));tempD(any(isnan(tempD),2),:)=nan;
 figure('Position',[ 910   176   500   588])
 plot_ratecomp2(tempD,sig_Touch,{'noLPuff','LPuff'},{vpmra;pomra},{'VPM';'POm'},'meansd','Rate fold change');title('nL/L Puff fold change Response, responsive cells')
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'foldchangeRates_nLL_RespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
@@ -635,24 +636,82 @@ for v=1:numel(rates_to_plotL)
 end
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'response_relative_to_whisking_in_air_light.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
+% %
+% figure('Position',[680   558   560   420],'Color','white')
+% tiledlayout(2,3);
+% nexttile(1,[2 2]);
+% polarscatter(PhaseModL.pref_phase(vpmra),PhaseModL.MD(vpmra),'r.');hold on
+% polarscatter(PhaseModL.pref_phase(pomra),PhaseModL.MD(pomra),'b.');hold off
+% title('phase modulation depth','preferred phase');
+% nexttile(3);
+% histogram(PhaseModL.MD(vpmra),0:.2:max(PhaseModL.MD(cat(1,vpmra,pomra)))+.2,'FaceColor','r');hold on;box off
+% title('phase modulation depth');
+% nexttile(6);
+% histogram(PhaseModL.MD(pomra),0:.2:max(PhaseModL.MD(cat(1,vpmra,pomra)))+.2,'FaceColor','b');hold on;box off
+% if write_figs;exportgraphics (gcf,[figdir Fig_no 'phase_mod_whisking_in_air_light.pdf'], 'BackgroundColor','none','ContentType','vector');end
+
 %
+cell_select={vpmra;pomra};
 figure('Position',[680   558   560   420],'Color','white')
 tiledlayout(2,3);
 nexttile(1,[2 2]);
-polarscatter(PhaseModL.pref_phase(vpmra),PhaseModL.MD(vpmra),'r.');hold on
-polarscatter(PhaseModL.pref_phase(pomra),PhaseModL.MD(pomra),'b.');hold off
-title('phase modulation depth','preferred phase');
+polarscatter(PhaseModL.pref_phase(cell_select{1}),PhaseModL.SNR(cell_select{1}),75,'m.');hold on
+polarscatter(PhaseModL.pref_phase(cell_select{1}(PhaseModL.p(cell_select{1})<.05)),PhaseModL.SNR(cell_select{1}(PhaseModL.p(cell_select{1})<.05)),75,'r.');hold on
+polarscatter(PhaseModL.pref_phase(cell_select{2}),PhaseModL.SNR(cell_select{2}),75,'c.');hold on
+polarscatter(PhaseModL.pref_phase(cell_select{2}(PhaseModL.p(cell_select{2})<.05)),PhaseModL.SNR(cell_select{2}(PhaseModL.p(cell_select{2})<.05)),75,'b.');hold off
+
+title('phase SNR','preferred phase');
 nexttile(3);
-histogram(PhaseModL.MD(vpmra),0:.2:max(PhaseModL.MD(cat(1,vpmra,pomra)))+.2,'FaceColor','r');hold on;box off
-title('phase modulation depth');
+histogram(PhaseModL.SNR(cell_select{1}),0:.25:max(PhaseModL.SNR(cat(1,cell_select{1},cell_select{2})))+.2,'FaceColor','r');hold on;box off
+title('vpm phase SNR');
 nexttile(6);
-histogram(PhaseModL.MD(pomra),0:.2:max(PhaseModL.MD(cat(1,vpmra,pomra)))+.2,'FaceColor','b');hold on;box off
+histogram(PhaseModL.SNR(cell_select{2}),0:.25:max(PhaseModL.SNR(cat(1,cell_select{1},cell_select{2})))+.2,'FaceColor','b');hold on;box off
+title('pom phase SNR');
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'phase_mod_whisking_in_air_light.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
-%
+%%
+pref_phase_nLL=cat(2,PhaseMod.pref_phase',PhaseModL.pref_phase');
+SNR_nLL=cat(2,PhaseMod.SNR',PhaseModL.SNR');
+p_nLL=cat(2,PhaseMod.p',PhaseModL.p');
+cell_select_nLL={vpmrLa,pomrLa};
+s=200;
+figure('Position',[ 222         460        1018         518],'Color','white')
+tiledlayout (1,2)
+nexttile;
+Lx=1;Cx=1;
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),s,'m.');hold on
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),s,'r.');hold on
+Lx=2;Cx=1;
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),25,'cd','filled');hold on
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),25,'bd','filled');hold on
+polarplot(pref_phase_nLL(cell_select_nLL{Cx},:)',SNR_nLL(cell_select_nLL{Cx},:)' ,'k');hold on
+title('VPM pref phase with light')
+set(gca,'RLim', [0 3.5000])
+nexttile;
+Lx=1;Cx=2;
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),s,'m.');hold on
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),s,'r.');hold on
+Lx=2;Cx=2;
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),25,'cd','filled');hold on
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),25,'bd','filled');hold on
+polarplot(pref_phase_nLL(cell_select_nLL{Cx},:)',SNR_nLL(cell_select_nLL{Cx},:)','k');hold on
+title('POm pref phase with light')
+set(gca,'RLim', [0 3.5000])
+if write_figs;exportgraphics (gcf,[figdir Fig_no 'phase_mod_change_whisking_in_air_light.pdf'], 'BackgroundColor','none','ContentType','vector');end
+%%
+figure('Position',[ 910   176   500   588])
+plot_ratecomp2(SNR_nLL,p_nLL(:,2)<.05,{'noL SNR','L SNR'},{vpmrLa;pomrLa},{'VPM';'POm'},'meansd','Rate [Hz]');title('nL/L phase SNR')
+if write_figs;exportgraphics (gcf,[figdir Fig_no 'SNRchange_nLL.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
-
-
+%%
 %
 %
 figure('Position',[213         387        1587         401],'Color','white')

@@ -144,6 +144,7 @@ for s=1:numel(sel)
                 elseif contains(varargin{2}{a},'mono')
                     w(s)=nexttile(s+2*numel(sel));
                     ccont_mean(:)=mean(ccont_mean);
+                    fprintf('var %u mean: %.2f\n',a,ccont_mean(1));
                 end
                 plot(pbins,ccont_mean,'b-');box off
                 xlim(pbins([1 end]))
