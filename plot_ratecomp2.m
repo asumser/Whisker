@@ -25,8 +25,11 @@ for CT=1:numel(CellTypeLabels)
     if any(~selRatesSig)
     plot(off+[1:2],selRates(~selRatesSig,:)','Color',[.75 .75 .75]); hold on
     end
-    if plotMeanStd
-        errorbar(off+[.85 2.15],mean(selRates,1,'omitnan'),std(selRates,0,1,'omitnan'),'k.')
+    switch plotMeanStd
+        case 'meanstd'
+        errorbar(off+[.85 2.15],mean(selRates,1,'omitnan'),std(selRates,0,1,'omitnan'),'r')
+        case 'mean'
+            line(off+[.85 2.15],mean(selRates,1,'omitnan'),'Color','r')
     end
     
     errorbar(off+1.5,maxRate*1.05,.65,'horizontal','r')
