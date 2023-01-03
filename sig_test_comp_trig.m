@@ -22,6 +22,6 @@ for r=1:size(DiscreteData,2)
         end
     end
     if all(~cellfun(@isempty,Nxt))
-    [p(r)]=ranksum(Nxt{1},Nxt{2},'Tail',tail);
+    [p(r)]=ranksum(Nxt{1},Nxt{2},'tail',tail);
     end
 end

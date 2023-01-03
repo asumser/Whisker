@@ -41,6 +41,7 @@ rate_bins=-rate_time_before_trig:rate_binsize:rate_time_after_trig;
 psth_bins=-psth_time_before_trig:psth_binsize:psth_time_after_trig;
 psth_relativeTime=psth_bins(1:end-1)+diff(psth_bins);
 DiscreteData=update_whisking_times(DiscreteData,Amp,20,amp_thresh,200);
+DiscreteData=mk_nowhisk_sections(DiscreteData);
 %%
 % exclude={'Pole';'Light';'Exclude';'Grooming'};
 % [trigs_rep,trigs_rep_first]=get_reg_puff_trigs(DiscreteData,ppms,exclude,psth_safety_margin);
@@ -466,28 +467,38 @@ RatesWp(RatesWp>.5)=RatesWp(RatesWp>.5)-1;
 outsafety=250;%ms
 insafety=25;
 isi=10;
-include={};
-exclude={'Whisking';'Puff';'Touch';'Light';'Exclude';'Grooming'};
-[RatesQ]=get_DD_Rates2(DiscreteData,exclude,include, outsafety,insafety,ppms,0);
-
+include={'NoWhisking'};
+exclude={'Puff';'Touch';'Light';'Exclude';'Grooming'};
+[RatesQ,RatesQp]=get_DD_Rates2(DiscreteData,exclude,include, outsafety,insafety,ppms,shuffN);
+RatesQp(RatesQp>.5)=RatesQp(RatesQp>.5)-1;
 outsafety=200;%ms
 insafety=25;
 isi=10;
-include={'Whisking';'Light'};
-exclude={'Puff';'Touch';'Exclude';'Grooming'};
-[RatesWL]=get_DD_Rates2(DiscreteData,exclude,include, outsafety,insafety,ppms,shuffN);
-
+include={'Light'};
+exclude={'NoWhisking';'Puff';'Touch';'Exclude';'Grooming'};
+[RatesWL,RatesWLp]=get_DD_Rates2(DiscreteData,exclude,include, outsafety,insafety,ppms,shuffN);
+RatesWLp(RatesWLp>.5)=RatesWLp(RatesWLp>.5)-1;
 outsafety=200;%ms
 insafety=25;
 isi=10;
 include={'Light'};
 exclude={'Whisking';'Puff';'Touch';'Exclude';'Grooming'};
-[RatesQL]=get_DD_Rates2(DiscreteData,exclude,include, outsafety,insafety,ppms,shuffN);
-
+[RatesQL,RatesQLp]=get_DD_Rates2(DiscreteData,exclude,include, outsafety,insafety,ppms,shuffN);
+RatesQLp(RatesQLp>.5)=RatesQLp(RatesQLp>.5)-1;
 %%
 figure('Position',[ 910   176   500   588])
 plot_ratecomp2(cat(2,RatesQ,RatesW),abs(RatesWp)<.05,{'Q','W'},{vpmr;pomr},{'VPM';'POm'},'mean','Rate (Hz)');title('Whisking Rate, responsive cells')
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'WhiskingRatesGenrealRespondingCellsWTouch.pdf'], 'BackgroundColor','none','ContentType','vector');end
+%%
+figure('Position',[ 910   176   500   588])
+plot_ratecomp3(cat(3,cat(2,RatesQ,RatesW),cat(2,RatesQL,RatesWL)),cat(2,abs(RatesWp)<.05,abs(RatesWLp)<.05),{'Q';'W';'QL';'WL'},vpmrLa,{'nL';'L'},'mean','Rate (Hz)');
+title('VPM Whisking Rate nL/L, responsive cells w Light')
+if write_figs;exportgraphics (gcf,[figdir Fig_no 'WhiskingRatesLightRespondingCellsWLight_vpm.pdf'], 'BackgroundColor','none','ContentType','vector');end
+
+figure('Position',[ 910   176   500   588])
+plot_ratecomp3(cat(3,cat(2,RatesQ,RatesW),cat(2,RatesQL,RatesWL)),cat(2,abs(RatesWp)<.05,abs(RatesWLp)<.05),{'Q';'W';'QL';'WL'},pomrLa,{'nL';'L'},'mean','Rate (Hz)');
+title('POm Whisking Rate nL/L, responsive cells w Light')
+if write_figs;exportgraphics (gcf,[figdir Fig_no 'WhiskingRatesLightRespondingCellsWLight_pom.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 %%
 Fig_no='Fig4_';
@@ -709,66 +720,70 @@ H_PL=cat(2,H_PuffL{:})';
 
 
 figure('Position',[910   176   500   588])
-plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},vpm,{'nL Puff','L Puff'},'meansd','Rate [Hz]');
+plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},vpm,{'nL Puff','L Puff'},'mean','Rate [Hz]');
 title('nL/L Puff Response VPM', 'all cells')
 if write_figs;exportgraphics(gcf,[figdir Fig_no 'RatesLPuff_VPM_AllCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 figure('Position',[910   176   500   588])
-plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},pom,{'nL Puff','L Puff'},'meansd','Rate [Hz]');
+plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},pom,{'nL Puff','L Puff'},'mean','Rate [Hz]');
 title('nL/L Puff Response POm', 'all cells')
 if write_figs;exportgraphics(gcf,[figdir Fig_no 'RatesLPuff_POm_AllCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 figure('Position',[910   176   500   588])
-plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},vpmra,{'nL Puff','L Puff'},'meansd','Rate [Hz]');
+plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},vpmra,{'nL Puff','L Puff'},'mean','Rate [Hz]');
 title('nL/L Puff Response VPM', 'resp cells')
 if write_figs;exportgraphics(gcf,[figdir Fig_no 'RatesLPuff_VPM_RespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 figure('Position',[910   176   500   588])
-plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},pomra,{'nL Puff','L Puff'},'meansd','Rate [Hz]');
+plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},pomra,{'nL Puff','L Puff'},'mean','Rate [Hz]');
 title('nL/L Puff Response POm', 'resp cells')
 if write_figs;exportgraphics(gcf,[figdir Fig_no 'RatesLPuff_POm_RespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 figure('Position',[910   176   500   588])
-plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},vpmL,{'nL Puff','L Puff'},'meansd','Rate [Hz]');
+plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},vpmL,{'nL Puff','L Puff'},'mean','Rate [Hz]');
 title('nL/L Puff Response VPM', 'all cells w light')
 if write_figs;exportgraphics(gcf,[figdir Fig_no 'RatesLPuff_VPM_AllCellsWithLight.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 figure('Position',[910   176   500   588])
-plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},pomL,{'nL Puff','L Puff'},'meansd','Rate [Hz]');
+plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},pomL,{'nL Puff','L Puff'},'mean','Rate [Hz]');
 title('nL/L Puff Response POm', 'all cells w light')
 if write_figs;exportgraphics(gcf,[figdir Fig_no 'RatesLPuff_POm_AllCellsWithLight.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 figure('Position',[910   176   500   588])
-plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},vpmrLa,{'nL Puff','L Puff'},'meansd','Rate [Hz]');
+plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},vpmrLa,{'nL Puff','L Puff'},'mean','Rate [Hz]');
 title('nL/L Puff Response VPM', 'resp cells w light')
 if write_figs;exportgraphics(gcf,[figdir Fig_no 'RatesLPuff_VPM_RespondingCellsWithLight.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 figure('Position',[910   176   500   588])
-plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},pomrLa,{'nL Puff','L Puff'},'meansd','Rate [Hz]');
+plot_ratecomp3(cat(3,H_P,H_PL),cat(2,sig_Puff,sig_PuffL),{'0';'1';'0';'1'},pomrLa,{'nL Puff','L Puff'},'mean','Rate [Hz]');
 title('nL/L Puff Response POm', 'resp cells w light')
 if write_figs;exportgraphics(gcf,[figdir Fig_no 'RatesLPuff_POm_RespondingCellsWithLight.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 
 
 
-
+%%
 %LnL puff comp
-%significance: compare rates directly?
+p_PuffQWr=sig_test_comp_trig({trigsPnW;trigsPW},DiscreteData,rate_bins,2,'both',ppms);
+sig_PuffQWr=p_PuffQWr<sig;
+p_PuffQWb=sig_test_comp_trig({trigsPnW;trigsPW},DiscreteData,rate_bins,1,'both',ppms);
+sig_PuffQWb=p_PuffQWb<sig;
+
 tempD=cat(2,diff(H_P,1,2),diff(H_PL,1,2));tempD(any(isnan(tempD),2),:)=nan;
 figure('Position',[ 910   176   500   588])
-plot_ratecomp2(tempD,sig_PuffW,{'noLPuff','LPuff'},{vpmra;pomra},{'VPM';'POm'},'meansd','deltaRate [Hz]');title('diffnL/L Puff Response, responsive cells')
+plot_ratecomp2(tempD,sig_PuffW,{'noLPuff','LPuff'},{vpmra;pomra},{'VPM';'POm'},'mean','deltaRate [Hz]');title('diffnL/L Puff Response, responsive cells')
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'diffRates_nLL_PuffRespondingCells.pdf'],'BackgroundColor','none','ContentType','vector');end
 tempD=cat(2,H_P(:,1),H_PL(:,1));tempD(any(isnan(tempD),2),:)=nan;
 figure('Position',[ 910   176   500   588])
-plot_ratecomp2(tempD,sig_PuffW,{'noLPuff','LPuff'},{vpmra;pomra},{'VPM';'POm'},'meansd','Rate [Hz]');title('baseline activity before nL/L Puff, responsive cells')
+plot_ratecomp2(tempD,sig_PuffW,{'noLPuff','LPuff'},{vpmra;pomra},{'VPM';'POm'},'mean','Rate [Hz]');title('baseline activity before nL/L Puff, responsive cells')
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'baseRates_nLL_PuffRespondingCells.pdf'],'BackgroundColor','none','ContentType','vector');end
 tempD=cat(2,H_P(:,2),H_PL(:,2));tempD(any(isnan(tempD),2),:)=nan;
 figure('Position',[ 910   176   500   588])
-plot_ratecomp2(tempD,sig_PuffW,{'noLPuff','LPuff'},{vpmra;pomra},{'VPM';'POm'},'meansd','Rate [Hz]');title('nL/L Puff Response, responsive cells')
+plot_ratecomp2(tempD,sig_PuffW,{'noLPuff','LPuff'},{vpmra;pomra},{'VPM';'POm'},'mean','Rate [Hz]');title('nL/L Puff Response, responsive cells')
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'absRates_nLL_PuffRespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
 tempD=cat(2,log2(H_P(:,2)./H_P(:,1)),log2(H_PL(:,2)./H_PL(:,1)));tempD(any(isnan(tempD),2),:)=nan;
 figure('Position',[ 910   176   500   588])
-plot_ratecomp2(tempD,sig_Touch,{'noLPuff','LPuff'},{vpmra;pomra},{'VPM';'POm'},'meansd','Rate fold change');title('nL/L Puff fold change Response, responsive cells')
+plot_ratecomp2(tempD,sig_Touch,{'noLPuff','LPuff'},{vpmra;pomra},{'VPM';'POm'},'mean','Rate fold change');title('nL/L Puff fold change Response, responsive cells')
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'foldchangeRates_nLL_RespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 %%

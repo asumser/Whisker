@@ -5,7 +5,7 @@ for n=1:size(DiscreteData,2)
     exclude_vec=zeros(1,DiscreteData(n).LengthInd);
     for ex=1:numel(exclude)
         switch exclude{ex}
-            case {'Puff','Touch','Whisking','Light'}
+            case {'Puff','Touch','Whisking','Light','NoWhisking'}
                 starts=DiscreteData(n).(strcat(exclude{ex},'Start'));
                 lengths=DiscreteData(n).(strcat(exclude{ex},'Length'));
                 ends=starts+lengths;
@@ -32,7 +32,7 @@ for n=1:size(DiscreteData,2)
     if ~isempty(include)
         for in=1:numel(include)
             switch include{in}
-                case {'Puff','Touch','Whisking','Light'}
+                case {'Puff','Touch','Whisking','Light','NoWhisking'}
                     starts=DiscreteData(n).(strcat(include{in},'Start'));
                     lengths=DiscreteData(n).(strcat(include{in},'Length'));
                     ends=starts+lengths;
