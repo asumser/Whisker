@@ -22,7 +22,7 @@ write_figs=true;
 if write_figs
     mkdir(figdir)
 end
-%% settings
+% settings
 psth_time_before_trig=25;%ms
 psth_time_after_trig=75;%ms
 psth_binsize=1;%ms
