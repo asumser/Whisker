@@ -100,6 +100,7 @@ for SN=1:numel(split_var_nameC)
                     a=load(Wdname, split_var_name);
                     a=a.(split_var_name);
                     a=cellfun(@(x) x-median(x,'omitnan'),a,'UniformOutput',0);
+                    a=cellfun(@(x) x./std(x,0,'omitnan'),a,'UniformOutput',0);
             end
             pbinsx=pbins(pbins<25 & pbins>-25);
             [~,sp_tr_P]=get_trig_cont_pop(P_trig,pbinsx,a,20,DiscreteData);
@@ -137,17 +138,17 @@ for SN=1:numel(split_var_nameC)
     %
 
     %Ilim=[0 inf];
-    %%
+    %
     for S=1:numel(splits)
 
-        ST=cell(numel(T_trig),numel(Ilim)-1,2);
+        ST=cell(numel(T_trig),numel(splits{S})-1,2);
         pdrs=nan(numel(T_trig),2);
         pdks=pdrs;
         pdksn=pdrs;
         pdrsn=pdrs;
-        meanratesplit=nan(numel(T_trig),numel(Ilim)-1,2,2);
+        meanratesplit=nan(numel(T_trig),numel(splits{S})-1,2,2);
         %puff trial split
-        Climx=nan(numel(T_trig),numel(Ilim),2);
+        Climx=nan(numel(T_trig),numel(splits{S}),2);
         for n=1:numel(T_trig)
             Clim=prctile(sp_tr_P{n},splits{S});
             Climx(n,:,1)=Clim;
