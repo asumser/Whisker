@@ -1,4 +1,4 @@
-function [spont_idx]=get_all_spont_idx(DD,exclude,safety,varargin)
+function [spont_idx]=get_all_spont_idx(DD,exclude,safetyEx,safetyIn,varargin)
 spont_idx=cell(size(DD))'; %init
 %%%%%%%%%%%%%%%%%%%%%
 % decode exclude input
@@ -70,6 +70,9 @@ for b=1:numel(DD) % all cells
         Sections=struct2cell(DD(b).Sections);
         indexout2=cell2mat(Sections(find(Si)));%start/end indices of section parameters
         indexout=[indexout1; indexout2];%alltogether (double entries do not matter)
+        if ~isempty(indexout)
+        indexout=indexout-[-safetyIn(1) safetyIn(end)]; %expand with safety window
+        end
         inidx=[];
         for i=1:size(indexout,1)
             inidx=cat(2,inidx,indexout(i,1):indexout(i,2));
@@ -79,7 +82,7 @@ for b=1:numel(DD) % all cells
         inidx=1:DD(b).LengthInd;
     end
     if ~isempty(indexin)
-        indexin=indexin+[-safety(1) safety(end)]; %expand with safety window
+        indexin=indexin+[-safetyEx(1) safetyEx(end)]; %expand with safety window
         
         outidx=[];
         for i=1:size(indexin,1)

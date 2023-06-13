@@ -40,7 +40,8 @@ selc={vpmr;pomr};
 selN={'VPM';'POm'};
 selS={'Puff';'Touch'};
 %%
-split_var_nameC={'Acceleration';'Curvature';'Interval';'Velocity';'Setp';'Amp';'Angle';'Phase'};
+%split_var_nameC={'Acceleration';'Curvature';'Interval';'Velocity';'Setp';'Amp';'Angle';'Phase'};
+split_var_nameC={'Acceleration';'Curvature';'Interval';'Velocity'};
 type_nameC={'raw','abs','rel','absrel'};
 
 %
@@ -110,12 +111,87 @@ end
 
 sp_tr_T=cellfun(@(x) reshape(x,[],1),sp_tr_T,'UniformOutput',0);
 sp_tr_P=cellfun(@(x) reshape(x,[],1),sp_tr_P,'UniformOutput',0);
+sp_tr_Tall=cell(1,size(sp_tr_T,2),size(sp_tr_T,3));
+sp_tr_Pall=sp_tr_Tall;
+for SN=1:size(sp_tr_T,2)
+    for ty=1:size(sp_tr_T,3)
+        sp_tr_Tall{1,SN,ty}=cat(1,sp_tr_T{:,SN,ty});
+        sp_tr_Pall{1,SN,ty}=cat(1,sp_tr_P{:,SN,ty});
+    end
+end
 
+%% Interval relative
+% preSTR=STR(:,[1 3],:);
+SN=strcmp('Interval',split_var_nameC);
+% binsR=[-35 0 35];
+Interval_trials_P=sp_tr_P(:,SN,1);
+Interval_trials_P_all=cat(1,Interval_trials_P{:});
+Interval_trials_T=sp_tr_T(:,SN,1);
+Interval_trials_T_all=cat(1,Interval_trials_T{:});
+Ilim=[0 .125 1.0001 Inf];
+ST=cell(numel(T_trig),numel(Ilim)-1,2);
+STR=cell(numel(T_trig),numel(binsR)-1,2);
+for n=1:numel(T_trig)
+    if ~isempty(RasterHP{n}) && ~isempty(Interval_trials_P{n}) && ~any(n==[80 81])
+        ix=discretize(Interval_trials_P{n},Ilim)';
+        sb=ix(RasterHP{n}(:,2));
+        for x=1:numel(Ilim)-1
+            ST{n,x,1}=RasterHP{n}(sb==x,1);
+            STR{n,x,1}=histcounts(ST{n,x,1},binsR)./sum(ix==x)./(diff(binsR)/1000);
+            if sum(ix==x) <=1
+                STR{n,x,1}(:)=nan;
+            end
+        end
+    else
+        STR(n,:,1)={nan(1,numel(binsR)-1)};
+    end
+
+    if ~isempty(RasterHT{n}) && ~isempty(Interval_trials_T{n}) && ~any(n==[80 81])
+        ix=discretize(Interval_trials_T{n},Ilim)';
+        sb=ix(RasterHT{n}(:,2));
+        for x=1:numel(Ilim)-1
+            ST{n,x,2}=RasterHT{n}(sb==x,1);
+            STR{n,x,2}=histcounts(ST{n,x,2},binsR)./sum(ix==x)./(diff(binsR)/1000);
+            if sum(ix==x) <=1
+                STR{n,x,2}(:)=nan;
+            end
+        end
+    else
+        STR(n,:,2)={nan(1,numel(binsR)-1)};
+    end
+end
+%
+BaseR=cellfun(@(x) x(1),STR(:,[1 3],:));
+RespR=cellfun(@(x) x(end),STR(:,[1 3],:));
+RespRnorm=permute(RespR(:,1,:)./RespR(:,2,:),[1 3 2]);
+RespBaseNorm=RespR-BaseR;
+shortlabel=sprintf('Int<=%.2f',Ilim(2));
+labelend=sprintf('Int>%.2f',Ilim(3));
+figure('Position',[910   176   500   588])
+plot_ratecomp3(RespBaseNorm,true(size(RespBaseNorm)),{shortlabel;labelend;shortlabel;labelend},vpmr,{'Puff','Touch'},'mean','dRate post-pre [Hz]');
+title('Short/Long Interval VPM', 'resp. cells')
+figure('Position',[1410         176         500         588])
+plot_ratecomp3(RespBaseNorm,true(size(RespBaseNorm)),{shortlabel;labelend;shortlabel;labelend},pomr,{'Puff','Touch'},'mean','dRate post-pre [Hz]');
+title('Short/Long Interval POm', 'resp. cells')
+
+%RespRnorm=permute((RespR(:,1,:)-RespR(:,2,:))./(RespR(:,1,:)+RespR(:,2,:)),[1 3 2]);
+figure
+plot(categorical({'VPM Puff'}),RespRnorm(selc{1},1),'k.');hold on;
+plot(categorical({'POm Puff'}),RespRnorm(selc{2},1),'k.');hold on;
+plot(categorical({'VPM Touch'}),RespRnorm(selc{1},2),'k.');hold on;
+plot(categorical({'POm Touch'}),RespRnorm(selc{2},2),'k.');hold on;
+
+figure
+plot(categorical({'VPM Puff'}),RespRnorm(selc{1},1),'k.');hold on;
+plot(categorical({'POm Puff'}),RespRnorm(selc{2},1),'k.');hold on;
+plot(categorical({'VPM Touch'}),RespRnorm(selc{1},2),'k.');hold on;
+plot(categorical({'POm Touch'}),RespRnorm(selc{2},2),'k.');hold on;
 %% split by all together
 splits=[0 33.3333 66.6667 100];
-split_allR=[true;false];
+split_allR=true;%[true;false];
 % split_var_nameC={'Acceleration';'Curvature';'Interval';'Velocity';'Setp';'Amp';'Angle';'Phase'};
 % type_nameC={'raw','abs','rel','absrel'};
+S=1;
 for sa=1:numel(split_allR)
     split_all=split_allR(sa);
     if split_all
@@ -166,14 +242,14 @@ for sa=1:numel(split_allR)
                         STH{n,x,1}=histcounts(ST{n,x,1},bins)./sum(ix==x);
                         STR{n,x,1}=histcounts(ST{n,x,1},binsR)./sum(ix==x)./(diff(binsR)/1000);
                         if sum(ix==x) <=1
-                            STH{n,x,2}(:)=nan;
-                            STR{n,x,2}(:)=nan;
+                            STH{n,x,1}(:)=nan;
+                            STR{n,x,1}(:)=nan;
                         end
                         %      STHc{n,x,1}=conv(STH{n,x,1},smoothker2,'same');
                     end
                 else
                     STH(n,:,1)={nan(1,numel(pbins))};
-                    STR(n,:,2)={nan(1,numel(binsR)-1)};
+                    STR(n,:,1)={nan(1,numel(binsR)-1)};
                     %   STHc(n,:,2)={nan(1,numel(pbins))};
                 end
                 %touch trial split
@@ -226,8 +302,8 @@ for sa=1:numel(split_allR)
 
             end
 
-            H1=histcounts(sp_tr_Pall,vbins,'Normalization','probability');
-            H2=histcounts(sp_tr_Tall,vbins,'Normalization','probability');
+            H1=histcounts(cat(1,sp_tr_P{:,SN,TY}),vbins,'Normalization','probability');
+            H2=histcounts(cat(1,sp_tr_T{:,SN,TY}),vbins,'Normalization','probability');
             bar(pvbins,H1,1,'FaceColor',C(1,:),'EdgeColor','none');hold on
             bar(pvbins,H2,1,'FaceColor',C(2,:),'EdgeColor','none','FaceAlpha',.7);hold on
             %         line(Ilim([2 2]),[0 1.25*max([H1 H2])],'Color','k');
@@ -368,6 +444,21 @@ for sa=1:numel(split_allR)
             exportgraphics(fig1,[figdir 'SplitPT_' figadd '.pdf'],'BackgroundColor','none','ContentType','vector')
 
             %%
+
+            STR=STR(:,[1 3],:);
+            %%
+            fig2=figure('Position',[910         176        1000         710]);
+            tt= tiledlayout(1,2);
+            label1=sprintf('%s<=%.3f',split_var_name,Ilim(2));
+            labelend=sprintf('%s>%.3f',split_var_name,Ilim(3));
+            nexttile;
+            plot_ratecomp3(STR,true(size(STR)),{label1;labelend;label1;labelend},vpmr,{'Puff','Touch'},'mean','dRate post-pre [Hz]');
+            title('VPM')
+            nexttile;
+            plot_ratecomp3(STR,true(size(STR)),{label1;labelend;label1;labelend},pomr,{'Puff','Touch'},'mean','dRate post-pre [Hz]');
+            title('POm')
+            title(tt,'Tert 1/3 comp',figadd,'Interpreter','none');
+            exportgraphics(fig2,[figdir 'Comp13_PT_' figadd '.pdf'],'BackgroundColor','none','ContentType','vector')
 
             %%
             %         exportgraphics(fig2,[figdir 'SplitPT_distr_rate_' figadd '.pdf'],'BackgroundColor','none','ContentType','vector')

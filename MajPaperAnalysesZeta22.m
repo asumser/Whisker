@@ -10,10 +10,8 @@ Amp=Amp_extrema;clear Amp_extrema
 Setp=Setpoint_extrema;clear Setpoint_extrema
 minFillQ=4;
 
-% vpm=find(RecDB.DefinedNucleus=='VPM' & RecDB.FillQuality<=minFillQ & RecDB.RecordingType=='juxta');
-% pom=find(RecDB.DefinedNucleus=='POm' & RecDB.FillQuality<=minFillQ & RecDB.RecordingType=='juxta');
 %% fig stuff
-figdir=['C:\Data\Whisker\Paperfigs_matlab\' datestr(now,'YYmmDD') '\'];
+figdir=['C:\Data\Whisker\Paperfigs_matlab\' datestr(now,'YYmmDD') '_new\'];
 set(0,'defaultfigurecolor',[1 1 1]);
 set(0, 'DefaultAxesBox', 'off')
 set(0,'defaultAxesFontName', 'Arial')
@@ -22,14 +20,15 @@ write_figs=true;
 if write_figs
     mkdir(figdir)
 end
-% settings
+%% settings
 psth_time_before_trig=25;%ms
 psth_time_after_trig=75;%ms
 psth_binsize=1;%ms
+reassign_response_types=true;
 psth_safety_margin=psth_time_after_trig;%ms
 rate_time_before_trig=50;%ms
-rate_time_after_trig=50;%ms
-rate_binsize=50;%ms
+rate_time_after_trig=rate_time_before_trig;%ms
+rate_binsize=rate_time_before_trig;%ms
 sig=.05;
 isi=10;
 puff_triglength_limit=[28 32];%ms
@@ -112,6 +111,68 @@ end
 
 %% Figure 2
 Fig_no='Fig2_';
+%puff rates
+parameter='Puff';
+exclude={'Pole';'Light';'Exclude';'Grooming'};include=[];
+[H_Puff,~,p_Puff,~,p_trigs,~,p_trigL]=get_PSTH_pop(parameter, DiscreteData,puff_triglength_limit,ppms,rate_time_before_trig,rate_time_after_trig,exclude,psth_safety_margin,rate_binsize,isi,'left',[]);
+p_Puff=p_Puff{1}(:,2);
+sig_Puff=p_Puff<sig;
+H_P=cat(2,H_Puff{:})';
+
+
+
+
+%touch rates
+parameter='Touch';Name='Touch';
+exclude={'Puff';'Light';'Exclude';'Grooming'};
+[~,~,~,~,ttrigs,zeta_T,t_trigL]=get_PSTH_pop(parameter, DiscreteData,touch_triglength_limit,ppms,rate_time_before_trig,rate_time_after_trig,exclude,psth_safety_margin,rate_binsize,isi,'left',[]);
+[H_Touch,~,p_Touch]=get_PSTH_pop(parameter, DiscreteData,touch_triglength_limit,ppms,rate_time_before_trig,rate_time_after_trig,exclude,psth_safety_margin,rate_binsize,isi,'left',[]);
+p_Touch=p_Touch{1}(:,2);
+sig_Touch=p_Touch<sig;
+H_T=cat(2,H_Touch{:})';
+has_Touch=find(~isnan(p_Touch));
+if reassign_response_types
+    typemat=false(numel(p_Touch),2+2+2+2);
+ vpm=find(RecDB.DefinedNucleus=='VPM' & RecDB.FillQuality<=minFillQ & RecDB.RecordingType=='juxta');
+ pom=find(RecDB.DefinedNucleus=='POm' & RecDB.FillQuality<=minFillQ & RecDB.RecordingType=='juxta');
+typemat(vpm,1)=true;
+typemat(pom,2)=true;
+typemat(has_Touch,3)=true;
+typemat(hasLight,4)=true;
+typemat(sig_Puff,5)=true;
+typemat(sig_Touch,6)=true;
+typemat(zeta_output.p_Puff<sig,7)=true;
+typemat(zeta_output.p_Touch<sig,8)=true;
+
+vpmr=find(all(typemat(:,[1 3 5]),2));
+pomr=find(all(typemat(:,[2 3 5]),2));
+
+vpmra=find(all(typemat(:,[1 5]),2));
+pomra=find(all(typemat(:,[2 5]),2));
+
+vpmz=find(all(typemat(:,[1 3 7]),2));
+pomz=find(all(typemat(:,[2 3 7]),2));
+
+vpmza=find(all(typemat(:,[1 7]),2));
+pomza=find(all(typemat(:,[2 7]),2));
+
+vpmrz=find(all(typemat(:,[1 3 5 7]),2));
+pomrz=find(all(typemat(:,[2 3 5 7]),2));
+
+vpmrza=find(all(typemat(:,[1 5 7]),2));
+pomrza=find(all(typemat(:,[2 5 7]),2));
+
+vpmL=find(all(typemat(:,[1 4]),2));
+pomL=find(all(typemat(:,[2 4]),2));
+
+vpmLa=find(all(typemat(:,[1 4 5]),2));
+pomLa=find(all(typemat(:,[2 4 5]),2));
+
+vpmLr=find(all(typemat(:,[1 3 4 5]),2));
+pomLr=find(all(typemat(:,[2 3 4 5]),2));
+end
+fprintf('test interval: %u ms \n vpmr:%u, vpmra:%u , vpmLa:%u \n pomr:%u, pomra:%u , pomLa:%u \n',rate_time_after_trig,numel(vpmr),numel(vpmra),numel(vpmL),numel(pomr),numel(pomra),numel(pomL))
+%%
 %puff psths
 parameter='Puff';
 contPlot={MeanWp,MeanP,MeanAp};
@@ -130,13 +191,7 @@ Name='Puff_allResp';
 figure('Position',[38 260 1413 525],'Color','White');
 [P_PSTH_instrate]=plot_Pop_PSTH_wrapper3(parameter, DiscreteData,puff_triglength_limit,ppms,psth_time_before_trig,psth_time_after_trig,exclude,psth_safety_margin,psth_binsize,[],Name,{vpmra;pomra},{'VPM';'POm'},include,'latency',-inf,contPlot,{'meanbefore','scaleminmax','mono'},'baseline corr. whisker angle');
 if write_figs;exportgraphics(gcf,[figdir 'sFig2_Pop_including_notouchneurons_' parameter '_instRateResp_' datestr(now,'yymmdd') '.pdf'],'BackgroundColor','none');end
-%puff rates
-parameter='Puff';
-exclude={'Pole';'Light';'Exclude';'Grooming'};include=[];
-[H_Puff,~,p_Puff,~,p_trigs,~,p_trigL]=get_PSTH_pop(parameter, DiscreteData,puff_triglength_limit,ppms,rate_time_before_trig,rate_time_after_trig,exclude,psth_safety_margin,rate_binsize,isi,'left',[]);
-p_Puff=p_Puff{1}(:,2);
-sig_Puff=p_Puff<sig;
-H_P=cat(2,H_Puff{:})';
+
 
 %
 %touch psths
@@ -152,12 +207,67 @@ plot_wh_trace_with_sem(MeanWt,SEM_Wt,{vpmr;pomr},{'VPM';'POm'},'wh angle',psth_r
 if write_figs;exportgraphics(fig2a2,[figdir Fig_no 'Pop_' parameter '_wh_with_sem_' datestr(now,'yymmdd') '.pdf'],'BackgroundColor','none');end
 
 
-%touch rates
-[~,~,~,~,ttrigs,zeta_T,t_trigL]=get_PSTH_pop(parameter, DiscreteData,touch_triglength_limit,ppms,rate_time_before_trig,rate_time_after_trig,exclude,psth_safety_margin,rate_binsize,isi,'left',[]);
-[H_Touch,~,p_Touch]=get_PSTH_pop(parameter, DiscreteData,touch_triglength_limit,ppms,rate_time_before_trig,rate_time_after_trig,exclude,psth_safety_margin,rate_binsize,isi,'left',[]);
-p_Touch=p_Touch{1}(:,2);
-sig_Touch=p_Touch<sig;
-H_T=cat(2,H_Touch{:})';
+
+
+%%
+Fig_no='Fig2_';
+lat_binsize=1;
+lat_time_before_trig=0;
+lat_time_after_trig=50;
+lat_safety_margin=lat_time_after_trig;
+parameter='Puff';
+exclude={'Pole';'Light';'Exclude';'Grooming'};
+triglength_limit=[28 32];%ms
+tempDD=struct2cell(DiscreteData);
+spikes=squeeze(tempDD(1,1,:));clear temp*
+[RasterHPL,P_trig]=get_raster_pop_no_self_safety(parameter,spikes, DiscreteData,triglength_limit,ppms,lat_time_before_trig,lat_time_after_trig,exclude,lat_safety_margin,lat_binsize,isi,[]);
+
+parameter='Touch';
+exclude={'Puff';'Light';'Exclude';'Grooming'};
+triglength_limit=[-inf inf];%ms
+[RasterHTL,T_trig]=get_raster_pop_no_self_safety(parameter,spikes, DiscreteData,triglength_limit,ppms,lat_time_before_trig,lat_time_after_trig,exclude,lat_safety_margin,lat_binsize,isi,[]);
+first_spike_times=cell(numel(RasterHPL),2);
+fsl_p=ones(numel(RasterHPL),1);
+for n=1:numel(RasterHPL)
+    [a,ia,ib]=unique(RasterHPL{n}(:,2));
+    first_spike_times{n,1}=nan(size(P_trig{n},1),1);
+    first_spike_times{n,1}(a)=RasterHPL{n}(ia,1);
+    [a,ia,ib]=unique(RasterHTL{n}(:,2));
+    first_spike_times{n,2}=nan(size(T_trig{n},1),1);
+    first_spike_times{n,2}(a)=RasterHTL{n}(ia,1);
+if all(cellfun(@(x) any(~isnan(x)),first_spike_times(n,:)))
+     [fsl_p(n)]=ranksum(first_spike_times{n,1},first_spike_times{n,2});
+end
+end
+%%
+FSLavg=cellfun(@(x) mean(x,'omitnan'),first_spike_times);
+FSLstd=cellfun(@(x) std(x,0,'omitnan'),first_spike_times);
+FSLmed=cellfun(@(x) median(x,'omitnan'),first_spike_times);
+FSLiqr=cellfun(@(x) iqr(x),first_spike_times);
+FSLany=cellfun(@(x) mean(~isnan(x)),first_spike_times);
+FSLsig=true(size(FSLavg));%repmat(fsl_p<.05,1,2);%
+figure('Position',[ 910   176   500   588])
+plot_ratecomp2(FSLavg,FSLsig,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','first spike latency (ms)');title('mean first spike latency')
+if write_figs;exportgraphics (gcf,[figdir Fig_no 'firstspikelatency.pdf'],'BackgroundColor','none','ContentType','vector');end
+
+figure('Position',[ 910   176   500   588])
+plot_ratecomp2(FSLstd,FSLsig,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','std first spike latency (ms)');title('std first spike latency')
+if write_figs;exportgraphics (gcf,[figdir Fig_no 'stdfirstspikelatency.pdf'],'BackgroundColor','none','ContentType','vector');end
+
+figure('Position',[ 910   176   500   588])
+plot_ratecomp2(FSLmed,FSLsig,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','first spike latency (ms)');title('median first spike latency')
+if write_figs;exportgraphics (gcf,[figdir Fig_no 'firstspikelatencymedian.pdf'],'BackgroundColor','none','ContentType','vector');end
+
+figure('Position',[ 910   176   500   588])
+plot_ratecomp2(FSLiqr,FSLsig,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','std first spike latency (ms)');title('iqr first spike latency')
+if write_figs;exportgraphics (gcf,[figdir Fig_no 'iqrfirstspikelatency.pdf'],'BackgroundColor','none','ContentType','vector');end
+
+figure('Position',[ 910   176   500   588])
+plot_ratecomp2(FSLany,FSLsig,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','response probability');title('spike in window')
+if write_figs;exportgraphics (gcf,[figdir Fig_no 'responseprobability.pdf'],'BackgroundColor','none','ContentType','vector');end
+
+%%
+
 %%
 figure('Position',[910   176   500   588])
 plot_ratecomp3(cat(3,H_P,H_T),cat(2,sig_Puff,sig_Touch),{'0';'1';'0';'1'},vpm,{'Puff','Touch'},'mean','Rate [Hz]');
@@ -498,7 +608,7 @@ RatesQLp(RatesQLp>.5)=RatesQLp(RatesQLp>.5)-1;
 figure('Position',[ 910   176   500   588])
 plot_ratecomp2(cat(2,RatesQ,RatesW),abs(RatesWp)<.05,{'Q','W'},{vpmr;pomr},{'VPM';'POm'},'mean','Rate (Hz)');title('Whisking Rate, responsive cells')
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'WhiskingRatesGenrealRespondingCellsWTouch.pdf'], 'BackgroundColor','none','ContentType','vector');end
-%%
+%
 figure('Position',[ 910   176   500   588])
 plot_ratecomp3(cat(3,cat(2,RatesQ,RatesW),cat(2,RatesQL,RatesWL)),cat(2,abs(RatesWp)<.05,abs(RatesWLp)<.05),{'Q';'W';'QL';'WL'},vpmrLa,{'nL';'L'},'mean','Rate (Hz)');
 title('VPM Whisking Rate nL/L, responsive cells w Light')
@@ -517,13 +627,13 @@ safety_margin=[100 200];
 min_t=500;%minimal time in bin
 
 phasebinN=16;
-ampbins=[0:3:30 inf];
-abssetpbins=[0:3:30 inf];
-absangbins=[0:3:40 inf];
-setpbins=[-90 -25:3:30 inf];
-angbins=[-90 -30:3:45 inf];
+ampbins=[0:5:30 inf];
+abssetpbins=[0:5:30 inf];
+absangbins=[0:5:40 inf];
+setpbins=[-90 -25:5:30 inf];
+angbins=[-90 -30:5:45 inf];
 wbins={phasebinN;ampbins;abssetpbins;absangbins;setpbins;angbins};
-[Num_bin_occ,rates_to_plot,plot_x,name_vars,PhaseMod,whisker_corrs,name_whisker_corrs,neuron_correlations_with_params]=get_whisking_in_air_modulation(wbins,min_t,DiscreteData,exclude,include,safety_margin,ppms,amp_thresh,Amp,Setp,Angle,Phase);
+[Num_bin_occ,rates_to_plot,plot_x,name_vars,PhaseMod,whisker_corrs,name_whisker_corrs,neuron_correlations_with_params]=get_whisking_in_air_modulation(wbins,min_t,DiscreteData,exclude,include,safety_margin,[],ppms,amp_thresh,Amp,Setp,Angle,Phase);
 % %%
 % min_t=100;%minimal time in bin
 % ampbins=0:.05:1;
@@ -571,6 +681,52 @@ end
 %%
 figure
 plot(plot_x{1},rates_to_plot{1}(vpmr,:),'Color',[.75 .75 .75]);hold on
+%%
+figure('Position',[148         198        1593         688])
+tt= tiledlayout(1,2);
+title(tt,'mean whisking in air correlations amp')
+v=1;
+co=nan(size(rates_to_plot{v},1),2);
+for n=1:size(rates_to_plot{v},1)
+    tempresp=rates_to_plot{v}(n,:)';
+    tempnan=~isnan(tempresp);
+    tempnan(end)=false;
+    if sum(tempnan)>2
+        [co(n,1),co(n,2)]=corr(plot_x{v}(tempnan)',tempresp(tempnan));
+    end
+end
+cosig=co(:,2)<sig;
+    for c=1:numel(cell_select)
+        nexttile(c);
+
+       plot(plot_x{v},rates_to_plot{v}(cell_select{c}(~cosig(cell_select{c})),:),'Color',[.75 .75 .75]);hold on
+       plot(plot_x{v},rates_to_plot{v}(cell_select{c}(cosig(cell_select{c})),:),'Color',[.25 .25 .25]);hold on
+       % stA=std(rates_to_plot{v}(cell_select{c},sel),0,1,'omitnan')./sqrt(sum(~isnan(rates_to_plot{v}(cell_select{c},sel)),1));
+        mA=mean(rates_to_plot{v}(cell_select{c},:),1,'omitnan');
+        [cox, coxp]=corr(plot_x{v}',mA');
+%         SA=cat(2,mA-stA,fliplr(mA+stA));
+%         plotSA=cat(2,plot_x{v}(sel),fliplr(plot_x{v}(sel)));
+%         fill(plotSA,SA,cell_colors{c},'FaceAlpha',.25,'EdgeColor','none');hold on
+        plot(plot_x{v},mA,cell_colors{c});hold off;box off
+         ylabel('mean Rate (Hz)');
+    xlabel(name_vars{v});
+    title(cell_select_names{c},sprintf('%s c=%.2f, p=%.3g',name_vars{v},cox,coxp ))
+    xlim(plot_x{v}([1 end]));
+    end
+   
+%     ms=prctile(rates_to_plot{v}(cat(1,cell_select{:}),:),99,'all');
+%     nexttile(v+numel(rates_to_plot));
+%     imagesc(plot_x{v},1:numel(cell_select{1}),rates_to_plot{v}(cell_select{1},:),[0 ms]);title([cell_select_names{1} ' ' name_vars{v}]);box off;colormap(CustomColormap);
+%     xlim(plot_x{v}([1 end]));
+%     colorbar;
+%     nexttile(v+2*numel(rates_to_plot));
+%     imagesc(plot_x{v},1:numel(cell_select{2}),rates_to_plot{v}(cell_select{2},:),[0 ms]);title([cell_select_names{2} ' ' name_vars{v}]);box off;colormap(CustomColormap);
+%     xlim(plot_x{v}([1 end]));
+%     colorbar;
+
+if write_figs;exportgraphics (gcf,[figdir Fig_no 'response_relative_to_whisking_in_air_amp.pdf'], 'BackgroundColor','none','ContentType','vector');end
+
+
 %%
 figure('Position',[148         198        1593         688])
 tt= tiledlayout(2,6);
@@ -804,8 +960,9 @@ if write_figs;exportgraphics (gcf,[figdir Fig_no 'foldchangeRates_nolog_nLL_Resp
 
 exclude={'Pole';'Exclude';'Grooming';'Puff'};
 include={'Light'};
-safety_margin=[25 50];
-min_t=1000;%minimal time in bin
+safety_marginEx=[5 75];
+safety_marginIn=[10 0];
+min_t=500;%minimal time in bin
 
 phasebinN=16;
 ampbins=0:3:65;
@@ -814,11 +971,11 @@ absangbins=0:3:65;
 setpbins=-30:3:40;
 angbins=-40:3:65;
 wbins={phasebinN;ampbins;abssetpbins;absangbins;setpbins;angbins};
-[Num_bin_occL,rates_to_plotL,plot_x,name_vars,PhaseModL,whisker_corrsL,name_whisker_corrs,neuron_correlations_with_paramsL]=get_whisking_in_air_modulation(wbins,min_t,DiscreteData,exclude,include,safety_margin,ppms,amp_thresh,Amp,Setp,Angle,Phase);
+[Num_bin_occL,rates_to_plotL,plot_x,name_vars,PhaseModL,whisker_corrsL,name_whisker_corrs,neuron_correlations_with_paramsL]=get_whisking_in_air_modulation(wbins,min_t,DiscreteData,exclude,include,safety_marginEx,safety_marginIn,ppms,amp_thresh,Amp,Setp,Angle,Phase);
 
 
-
-cell_select={vpmra;pomra};
+%%
+cell_select={vpmrLa;pomrLa};
 cell_select_names={'VPM';'POm'};
 cell_colors={'r';'b'};
 min_pointsN=4;
@@ -866,7 +1023,7 @@ if write_figs;exportgraphics (gcf,[figdir Fig_no 'response_relative_to_whisking_
 % histogram(PhaseModL.MD(pomra),0:.2:max(PhaseModL.MD(cat(1,vpmra,pomra)))+.2,'FaceColor','b');hold on;box off
 % if write_figs;exportgraphics (gcf,[figdir Fig_no 'phase_mod_whisking_in_air_light.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
-%
+%%
 cell_select={vpmra;pomra};
 figure('Position',[680   558   560   420],'Color','white')
 tiledlayout(2,3);
@@ -906,7 +1063,7 @@ polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.0
                     SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),25,'bd','filled');hold on
 polarplot(pref_phase_nLL(cell_select_nLL{Cx},:)',SNR_nLL(cell_select_nLL{Cx},:)' ,'k');hold on
 title('VPM pref phase with light')
-set(gca,'RLim', [0 3.5000])
+set(gca,'RLim', [0 2.5000])
 nexttile;
 Lx=1;Cx=2;
 polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),...
@@ -920,11 +1077,11 @@ polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.0
                     SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),25,'bd','filled');hold on
 polarplot(pref_phase_nLL(cell_select_nLL{Cx},:)',SNR_nLL(cell_select_nLL{Cx},:)','k');hold on
 title('POm pref phase with light')
-set(gca,'RLim', [0 3.5000])
+set(gca,'RLim', [0 2.5000])
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'phase_mod_change_whisking_in_air_light.pdf'], 'BackgroundColor','none','ContentType','vector');end
 %%
 figure('Position',[ 910   176   500   588])
-plot_ratecomp2(SNR_nLL,p_nLL(:,2)<.05,{'noL SNR','L SNR'},{vpmrLa;pomrLa},{'VPM';'POm'},'meansd','Rate [Hz]');title('nL/L phase SNR')
+plot_ratecomp2(SNR_nLL,p_nLL(:,2)<.05,{'no Light','Light'},{vpmrLa;pomrLa},{'VPM';'POm'},'meansd','SNR');title('nL/L phase SNR')
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'SNRchange_nLL.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 round(100.*[mean(p_nLL(vpmrLa,:)<.05) mean(p_nLL(pomrLa,:)<.05)])
@@ -949,6 +1106,40 @@ cb=colorbar;cb.Label.String='correlation coefficient';
 title('Correlation between whisker variables')
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'correlation_whisking_in_air_light.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
+%%
+figure('Position',[181          81        2067         571],'Color','white')
+tt=tiledlayout(4,6);
+cell_select=pomrLa;
+title(tt,'POm phase examples light')
+for r=1:numel(cell_select)
+nexttile
+bar(plot_x{6},rates_to_plot{6}(cell_select(r),:),1,'k','FaceAlpha',.5);hold on;
+plot(PhaseMod.fitresult{cell_select(r)},'b')
+% yyaxis right
+bar(plot_x{6},rates_to_plotL{6}(cell_select(r),:),1,'r','FaceAlpha',.5);hold on;
+plot(PhaseModL.fitresult{cell_select(r)},'r')
+legend off
+xlim([-pi pi])
+box off;
+end
+if write_figs;exportgraphics (gcf,[figdir Fig_no 'phase_lock_example_pom_light.pdf'], 'BackgroundColor','none','ContentType','vector');end
+%%
+figure('Position',[181          81        2067         571],'Color','white')
+tt=tiledlayout(4,6);
+cell_select=vpmrLa;
+title(tt,'VPM phase examples light')
+for r=1:numel(cell_select)
+nexttile
+bar(plot_x{6},rates_to_plot{6}(cell_select(r),:),1,'k','FaceAlpha',.5);hold on;
+plot(PhaseMod.fitresult{cell_select(r)},'b')
+% yyaxis right
+bar(plot_x{6},rates_to_plotL{6}(cell_select(r),:),1,'r','FaceAlpha',.5);hold on;
+plot(PhaseModL.fitresult{cell_select(r)},'r')
+legend off
+xlim([-pi pi])
+box off;
+end
+if write_figs;exportgraphics (gcf,[figdir Fig_no 'phase_lock_example_vpm_light.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 %% Figure 6
 %% Figure 7

@@ -1,10 +1,13 @@
-function [NumSD,rates_to_plot,plot_x,name_vars,PhaseMod,whisker_corrs,name_whisker_corrs,neuron_correlations_with_params]=get_whisking_in_air_modulation(bins,min_t,DiscreteData,exclude,include,safety_margin,ppms,amp_thresh,Amp,Setp,Angle,Phase)
+function [NumSD,rates_to_plot,plot_x,name_vars,PhaseMod,whisker_corrs,name_whisker_corrs,neuron_correlations_with_params]=get_whisking_in_air_modulation(bins,min_t,DiscreteData,exclude,include,safety_marginEx,safety_marginIn,ppms,amp_thresh,Amp,Setp,Angle,Phase)
 
 
 DDc=struct2cell(DiscreteData);
 AllSpikes=squeeze(DDc(1,:,:));
-SpikesSelected=cleanup_sections_exclusive(DiscreteData,exclude,safety_margin*ppms,AllSpikes);
-[spont_idx]=get_all_spont_idx(DiscreteData,exclude,safety_margin*ppms,include);
+SpikesSelected=cleanup_sections_exclusive(DiscreteData,exclude,safety_marginEx*ppms,AllSpikes);
+if ~isempty(include)
+    [SpikesSelected]=cleanup_sections_inclusive(DiscreteData,include,safety_marginIn*ppms,SpikesSelected);
+end
+[spont_idx]=get_all_spont_idx(DiscreteData,exclude,safety_marginEx*ppms,safety_marginIn*ppms,include);
 
 phasebins=linspace(-pi,pi,bins{1}+1);
 ampbins=bins{2};%0:3:65;
