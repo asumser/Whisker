@@ -1,15 +1,21 @@
 function [H,trig]=get_raster_pop_no_self_safety(parameter,events, DiscreteData,triglength_limit,ppms,time_before_trig,time_after_trig,exclude,safety_margin,binsize,isi,trigstartend,varargin)
 
+if ischar(parameter)
+    trig=select_trigs(parameter,DiscreteData,triglength_limit,ppms,trigstartend);
+    for R=1:size(DiscreteData,2)
+        [trig{R}]=exclude_reg_puff(trig{R});
+    end
+    %trig=cleanup_self_safety(time_before_trig*ppms,time_after_trig*ppms,trig); %only isolated
+    trig=cleanup_sections_exclusive(DiscreteData,exclude,safety_margin*ppms,trig);
+    if ~isempty(varargin)
+        [trig]=cleanup_sections_inclusive(DiscreteData,varargin{1},varargin{2}*ppms,trig);
+    end
+else
+    trig=parameter(:,1);
+  
+end
 
-trig=select_trigs(parameter,DiscreteData,triglength_limit,ppms,trigstartend);
-for R=1:size(DiscreteData,2)
-    [trig{R}]=exclude_reg_puff(trig{R});
-end
-%trig=cleanup_self_safety(time_before_trig*ppms,time_after_trig*ppms,trig); %only isolated
-trig=cleanup_sections_exclusive(DiscreteData,exclude,safety_margin*ppms,trig);
-if ~isempty(varargin)
-    [trig]=cleanup_sections_inclusive(DiscreteData,varargin{1},varargin{2}*ppms,trig);
-end
+
 %tempDD=struct2cell(DiscreteData);spikes=squeeze(tempDD(1,1,:));clear temp*
 IPI=cell(size(trig));
 for x=1:numel(trig)

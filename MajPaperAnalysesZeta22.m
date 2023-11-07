@@ -5,13 +5,13 @@ load([DrivePath 'Arbeit\Projects\Database\ephys_database.mat'])
 RecDB.Properties.RowNames=strcat(RecDB.AnimalName,{'_'},datestr(RecDB.StartTime,'HH_MM_SS'));
 load([DataPath 'DiscreteData.mat'])
 ppms=20;
-load('R:\Whisker\Wdec\Wdec_by_field.mat', 'Angle','Phase','Amp_extrema','Setpoint_extrema','Curvature')
+load('C:\Data\Whisker\Wdec\Wdec_by_field.mat', 'Angle','Phase','Amp_extrema','Setpoint_extrema','Curvature')
 Amp=Amp_extrema;clear Amp_extrema
 Setp=Setpoint_extrema;clear Setpoint_extrema
 minFillQ=4;
 
 %% fig stuff
-figdir=['C:\Data\Whisker\Paperfigs_matlab\' datestr(now,'YYmmDD') '_new\'];
+figdir=['C:\Data\Whisker\Paperfigs_matlab\' datestr(now,'YYmmDD') '_s\'];
 set(0,'defaultfigurecolor',[1 1 1]);
 set(0, 'DefaultAxesBox', 'off')
 set(0,'defaultAxesFontName', 'Arial')
@@ -20,7 +20,7 @@ write_figs=true;
 if write_figs
     mkdir(figdir)
 end
-%% settings
+% settings
 psth_time_before_trig=25;%ms
 psth_time_after_trig=75;%ms
 psth_binsize=1;%ms
@@ -119,9 +119,6 @@ p_Puff=p_Puff{1}(:,2);
 sig_Puff=p_Puff<sig;
 H_P=cat(2,H_Puff{:})';
 
-
-
-
 %touch rates
 parameter='Touch';Name='Touch';
 exclude={'Puff';'Light';'Exclude';'Grooming'};
@@ -213,7 +210,7 @@ if write_figs;exportgraphics(fig2a2,[figdir Fig_no 'Pop_' parameter '_wh_with_se
 Fig_no='Fig2_';
 lat_binsize=1;
 lat_time_before_trig=0;
-lat_time_after_trig=50;
+lat_time_after_trig=75;
 lat_safety_margin=lat_time_after_trig;
 parameter='Puff';
 exclude={'Pole';'Light';'Exclude';'Grooming'};
@@ -239,7 +236,7 @@ if all(cellfun(@(x) any(~isnan(x)),first_spike_times(n,:)))
      [fsl_p(n)]=ranksum(first_spike_times{n,1},first_spike_times{n,2});
 end
 end
-%%
+%
 FSLavg=cellfun(@(x) mean(x,'omitnan'),first_spike_times);
 FSLstd=cellfun(@(x) std(x,0,'omitnan'),first_spike_times);
 FSLmed=cellfun(@(x) median(x,'omitnan'),first_spike_times);
@@ -609,6 +606,7 @@ figure('Position',[ 910   176   500   588])
 plot_ratecomp2(cat(2,RatesQ,RatesW),abs(RatesWp)<.05,{'Q','W'},{vpmr;pomr},{'VPM';'POm'},'mean','Rate (Hz)');title('Whisking Rate, responsive cells')
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'WhiskingRatesGenrealRespondingCellsWTouch.pdf'], 'BackgroundColor','none','ContentType','vector');end
 %
+Fig_no='Fig5_';
 figure('Position',[ 910   176   500   588])
 plot_ratecomp3(cat(3,cat(2,RatesQ,RatesW),cat(2,RatesQL,RatesWL)),cat(2,abs(RatesWp)<.05,abs(RatesWLp)<.05),{'Q';'W';'QL';'WL'},vpmrLa,{'nL';'L'},'mean','Rate (Hz)');
 title('VPM Whisking Rate nL/L, responsive cells w Light')
@@ -682,6 +680,9 @@ end
 figure
 plot(plot_x{1},rates_to_plot{1}(vpmr,:),'Color',[.75 .75 .75]);hold on
 %%
+cell_select={vpmra;pomra};
+cell_select_names={'VPM';'POm'};
+cell_colors={'r';'b'};
 figure('Position',[148         198        1593         688])
 tt= tiledlayout(1,2);
 title(tt,'mean whisking in air correlations amp')
@@ -765,10 +766,10 @@ cell_select={vpmra;pomra};
 figure('Position',[680   558   560   420],'Color','white')
 tiledlayout(2,3);
 nexttile(1,[2 2]);
-polarscatter(PhaseMod.pref_phase(cell_select{1}),PhaseMod.SNR(cell_select{1}),75,'m.');hold on
-polarscatter(PhaseMod.pref_phase(cell_select{1}(PhaseMod.p(cell_select{1})<.05)),PhaseMod.SNR(cell_select{1}(PhaseMod.p(cell_select{1})<.05)),75,'r.');hold on
-polarscatter(PhaseMod.pref_phase(cell_select{2}),PhaseMod.SNR(cell_select{2}),75,'c.');hold on
-polarscatter(PhaseMod.pref_phase(cell_select{2}(PhaseMod.p(cell_select{2})<.05)),PhaseMod.SNR(cell_select{2}(PhaseMod.p(cell_select{2})<.05)),75,'b.');hold off
+polarscatter(PhaseMod.pref_phase(cell_select{1}(PhaseMod.p(cell_select{1})>.05)),PhaseMod.SNR(cell_select{1}(PhaseMod.p(cell_select{1})>.05)),75,'m.');hold on
+polarscatter(PhaseMod.pref_phase(cell_select{1}(PhaseMod.p(cell_select{1})<=.05)),PhaseMod.SNR(cell_select{1}(PhaseMod.p(cell_select{1})<=.05)),75,'r.');hold on
+polarscatter(PhaseMod.pref_phase(cell_select{2}(PhaseMod.p(cell_select{2})>.05)),PhaseMod.SNR(cell_select{2}(PhaseMod.p(cell_select{2})>.05)),75,'c.');hold on
+polarscatter(PhaseMod.pref_phase(cell_select{2}(PhaseMod.p(cell_select{2})<=.05)),PhaseMod.SNR(cell_select{2}(PhaseMod.p(cell_select{2})<=.05)),75,'b.');hold off
 
 title('phase SNR','preferred phase');
 nexttile(3);
@@ -973,7 +974,6 @@ angbins=-40:3:65;
 wbins={phasebinN;ampbins;abssetpbins;absangbins;setpbins;angbins};
 [Num_bin_occL,rates_to_plotL,plot_x,name_vars,PhaseModL,whisker_corrsL,name_whisker_corrs,neuron_correlations_with_paramsL]=get_whisking_in_air_modulation(wbins,min_t,DiscreteData,exclude,include,safety_marginEx,safety_marginIn,ppms,amp_thresh,Amp,Setp,Angle,Phase);
 
-
 %%
 cell_select={vpmrLa;pomrLa};
 cell_select_names={'VPM';'POm'};
@@ -1024,14 +1024,14 @@ if write_figs;exportgraphics (gcf,[figdir Fig_no 'response_relative_to_whisking_
 % if write_figs;exportgraphics (gcf,[figdir Fig_no 'phase_mod_whisking_in_air_light.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 %%
-cell_select={vpmra;pomra};
+cell_select={vpmrLa;pomrLa};
 figure('Position',[680   558   560   420],'Color','white')
 tiledlayout(2,3);
 nexttile(1,[2 2]);
-polarscatter(PhaseModL.pref_phase(cell_select{1}),PhaseModL.SNR(cell_select{1}),75,'m.');hold on
-polarscatter(PhaseModL.pref_phase(cell_select{1}(PhaseModL.p(cell_select{1})<.05)),PhaseModL.SNR(cell_select{1}(PhaseModL.p(cell_select{1})<.05)),75,'r.');hold on
-polarscatter(PhaseModL.pref_phase(cell_select{2}),PhaseModL.SNR(cell_select{2}),75,'c.');hold on
-polarscatter(PhaseModL.pref_phase(cell_select{2}(PhaseModL.p(cell_select{2})<.05)),PhaseModL.SNR(cell_select{2}(PhaseModL.p(cell_select{2})<.05)),75,'b.');hold off
+polarscatter(PhaseModL.pref_phase(cell_select{1}(PhaseModL.p(cell_select{1})>.05)),PhaseModL.SNR(cell_select{1}(PhaseModL.p(cell_select{2})>.05)),75,'m.');hold on
+polarscatter(PhaseModL.pref_phase(cell_select{1}(PhaseModL.p(cell_select{1})<=.05)),PhaseModL.SNR(cell_select{1}(PhaseModL.p(cell_select{1})<=.05)),75,'r.');hold on
+polarscatter(PhaseModL.pref_phase(cell_select{2}(PhaseModL.p(cell_select{2})>.05)),PhaseModL.SNR(cell_select{2}(PhaseModL.p(cell_select{2})>.05)),75,'c.');hold on
+polarscatter(PhaseModL.pref_phase(cell_select{2}(PhaseModL.p(cell_select{2})<=.05)),PhaseModL.SNR(cell_select{2}(PhaseModL.p(cell_select{2})<=.05)),75,'b.');hold off
 
 title('phase SNR','preferred phase');
 nexttile(3);
@@ -1052,39 +1052,39 @@ figure('Position',[ 222         460        1018         518],'Color','white')
 tiledlayout (1,2)
 nexttile;
 Lx=1;Cx=1;
-polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),...
-                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),s,'m.');hold on
-polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),...
-                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),s,'r.');hold on
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>.05),Lx),s,'m.');hold on
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<=.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<=.05),Lx),s,'r.');hold on
 Lx=2;Cx=1;
-polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),...
-                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),25,'cd','filled');hold on
-polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),...
-                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),25,'bd','filled');hold on
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>.05),Lx),25,'cd','filled');hold on
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<=.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<=.05),Lx),25,'bd','filled');hold on
 polarplot(pref_phase_nLL(cell_select_nLL{Cx},:)',SNR_nLL(cell_select_nLL{Cx},:)' ,'k');hold on
 title('VPM pref phase with light')
 set(gca,'RLim', [0 2.5000])
 nexttile;
 Lx=1;Cx=2;
-polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),...
-                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),s,'m.');hold on
-polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),...
-                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),s,'r.');hold on
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>.05),Lx),s,'m.');hold on
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<=.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<=.05),Lx),s,'r.');hold on
 Lx=2;Cx=2;
-polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),...
-                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>=.05),Lx),25,'cd','filled');hold on
-polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),...
-                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<.05),Lx),25,'bd','filled');hold on
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)>.05),Lx),25,'cd','filled');hold on
+polarscatter(pref_phase_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<=.05),Lx),...
+                    SNR_nLL(cell_select_nLL{Cx}(p_nLL(cell_select_nLL{Cx},Lx)<=.05),Lx),25,'bd','filled');hold on
 polarplot(pref_phase_nLL(cell_select_nLL{Cx},:)',SNR_nLL(cell_select_nLL{Cx},:)','k');hold on
 title('POm pref phase with light')
 set(gca,'RLim', [0 2.5000])
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'phase_mod_change_whisking_in_air_light.pdf'], 'BackgroundColor','none','ContentType','vector');end
 %%
 figure('Position',[ 910   176   500   588])
-plot_ratecomp2(SNR_nLL,p_nLL(:,2)<.05,{'no Light','Light'},{vpmrLa;pomrLa},{'VPM';'POm'},'meansd','SNR');title('nL/L phase SNR')
+plot_ratecomp2(SNR_nLL,p_nLL(:,2)<=.05,{'no Light','Light'},{vpmrLa;pomrLa},{'VPM';'POm'},'mean','SNR');title('nL/L phase SNR')
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'SNRchange_nLL.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
-round(100.*[mean(p_nLL(vpmrLa,:)<.05) mean(p_nLL(pomrLa,:)<.05)])
+round(100.*[mean(p_nLL(vpmrLa,:)<=.05) mean(p_nLL(pomrLa,:)<=.05)])
 %%
 %
 %

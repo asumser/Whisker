@@ -1,26 +1,19 @@
-split_time_before_trig=50;%ms
-split_time_after_trig=50;%ms
-split_safety_margin=150;%time_after_trig;
-isi=10;
-Wdname='C:\Data\Whisker\Wdec\Wdec_by_field.mat';
-split_binsize=1;%ms
-smoothwidth=milliseconds(10);%ms
-meth='gaussian';
+function [RasterHP,RasterHT,sp_tr_Pall,sp_tr_Tall]=split_kinematics(split_time_before_trig,split_time_after_trig,split_safety_margin,Wdname,split_binsize,smoothwidth,meth,binsR,...
+    selc,splits,splitname,DiscreteData,ppms,split_var_nameC,type_nameC,split_allR,figdir,Angle,Setp,Amp,Phase)
 
 
-binsR=[-50 0 50];
+selN={'VPM';'POm'};
+selS={'Puff';'Touch'};
 % bins=-split_time_before_trig:split_binsize:split_time_after_trig;
 bins=binsR(1):split_binsize:binsR(end);
 pbins=bins(1:end-1);
 pbins=pbins+mean(diff(pbins)/2);
-splits={[0 100/3 200/3 100]};
-splitname={'Tertile'};
 
 
 % splits={[0 25 50 75 100];[0 100/3 200/3 100];[0 50 100]};
 % splitname={'Quartile';'Tertile';'median'};
 
-
+isi=10;
 %Puff
 parameter='Puff';
 exclude={'Pole';'Light';'Exclude';'Grooming'};
@@ -28,7 +21,6 @@ triglength_limit=[28 32];%ms
 tempDD=struct2cell(DiscreteData);
 spikes=squeeze(tempDD(1,1,:));clear temp*
 [RasterHP,P_trig]=get_raster_pop_no_self_safety(parameter,spikes, DiscreteData,triglength_limit,ppms,split_time_before_trig,split_time_after_trig,exclude,split_safety_margin,split_binsize,isi,[]);
-[RasterPP,~]=get_raster_pop_no_self_safety(parameter,P_trig, DiscreteData,triglength_limit,ppms,split_time_before_trig,split_time_after_trig,exclude,split_safety_margin,split_binsize,isi,[]);
 
 parameter='Touch';
 exclude={'Puff';'Light';'Exclude';'Grooming'};
@@ -36,13 +28,9 @@ triglength_limit=[-inf inf];%ms
 [RasterHT,T_trig]=get_raster_pop_no_self_safety(parameter,spikes, DiscreteData,triglength_limit,ppms,split_time_before_trig,split_time_after_trig,exclude,split_safety_margin,split_binsize,isi,[]);
 
 
-selc={vpmr;pomr};
-selN={'VPM';'POm'};
-selS={'Puff';'Touch'};
+
 %%
-split_var_nameC={'Acceleration';'Curvature';'Interval';'Velocity';'Setp';'Amp';'Angle';'Phase'};
-%split_var_nameC={'Curvature';'Velocity';'Acceleration';'Interval';'Amp'};
-type_nameC={'rawbefore','rawafter','absbefore','absafter','rel','absrel'};
+
 
 %
 close all
@@ -82,7 +70,7 @@ for SN=1:numel(split_var_nameC)
                     amp=a.Amp;
                     angA=a.Acceleration;
                     a=a.(split_var_name);
-                    
+
                     a=cellfun(@(x,y) x-median(x(y<3),'omitnan'),a,amp,'UniformOutput',0);
                     a=cellfun(@(x) x./std(x,0,'omitnan'),a,'UniformOutput',0);
             end
@@ -115,11 +103,11 @@ for SN=1:numel(split_var_nameC)
                         sp_tr_P(:,SN,tx)=cellfun(@(x) abs(mean(x(:,pbinsx>0),2,'omitnan')-mean(x(:,pbinsx<0),2,'omitnan')),temp_P,'UniformOutput',0);
                         sp_tr_T(:,SN,tx)=cellfun(@(x) abs(mean(x(:,pbinsx>0),2,'omitnan')-mean(x(:,pbinsx<0),2,'omitnan')),temp_T,'UniformOutput',0);
                 end
-              
 
-                
-                
-               
+
+
+
+
             end
             sp_tr_P(xP,SN,:)={[]};
             sp_tr_T(xT,SN,:)={[]};
@@ -139,76 +127,10 @@ for SN=1:size(sp_tr_T,2)
     end
 end
 
-%% Interval relative
-% preSTR=STR(:,[1 3],:);
-SN=strcmp('Interval',split_var_nameC);
-% binsR=[-35 0 35];
-Interval_trials_P=sp_tr_P(:,SN,1);
-Interval_trials_P_all=cat(1,Interval_trials_P{:});
-Interval_trials_T=sp_tr_T(:,SN,1);
-Interval_trials_T_all=cat(1,Interval_trials_T{:});
-Ilim=[0 .125 1.0001 Inf];
-ST=cell(numel(T_trig),numel(Ilim)-1,2);
-STR=cell(numel(T_trig),numel(binsR)-1,2);
-for n=1:numel(T_trig)
-    if ~isempty(RasterHP{n}) && ~isempty(Interval_trials_P{n}) && ~any(n==[80 81])
-        ix=discretize(Interval_trials_P{n},Ilim)';
-        sb=ix(RasterHP{n}(:,2));
-        for x=1:numel(Ilim)-1
-            ST{n,x,1}=RasterHP{n}(sb==x,1);
-            STR{n,x,1}=histcounts(ST{n,x,1},binsR)./sum(ix==x)./(diff(binsR)/1000);
-            if sum(ix==x) <=1
-                STR{n,x,1}(:)=nan;
-            end
-        end
-    else
-        STR(n,:,1)={nan(1,numel(binsR)-1)};
-    end
 
-    if ~isempty(RasterHT{n}) && ~isempty(Interval_trials_T{n}) && ~any(n==[80 81])
-        ix=discretize(Interval_trials_T{n},Ilim)';
-        sb=ix(RasterHT{n}(:,2));
-        for x=1:numel(Ilim)-1
-            ST{n,x,2}=RasterHT{n}(sb==x,1);
-            STR{n,x,2}=histcounts(ST{n,x,2},binsR)./sum(ix==x)./(diff(binsR)/1000);
-            if sum(ix==x) <=1
-                STR{n,x,2}(:)=nan;
-            end
-        end
-    else
-        STR(n,:,2)={nan(1,numel(binsR)-1)};
-    end
-end
-%
-BaseR=cellfun(@(x) x(1),STR(:,[1 3],:));
-RespR=cellfun(@(x) x(end),STR(:,[1 3],:));
-RespRnorm=permute(RespR(:,1,:)./RespR(:,2,:),[1 3 2]);
-RespBaseNorm=RespR-BaseR;
-shortlabel=sprintf('Int<=%.2f',Ilim(2));
-labelend=sprintf('Int>%.2f',Ilim(3));
-fig1v=figure('Position',[910   176   500   588]);
-plot_ratecomp3(RespBaseNorm,true(size(RespBaseNorm)),{shortlabel;labelend;shortlabel;labelend},vpmr,{'Puff','Touch'},'mean','dRate post-pre [Hz]');
-title('Short/Long Interval VPM', 'resp. cells')
-exportgraphics(fig1v,[figdir 'puffsplit_short_long_vpm.pdf'],'BackgroundColor','none','ContentType','vector')
-fig1p=figure('Position',[1410         176         500         588]);
-plot_ratecomp3(RespBaseNorm,true(size(RespBaseNorm)),{shortlabel;labelend;shortlabel;labelend},pomr,{'Puff','Touch'},'mean','dRate post-pre [Hz]');
-title('Short/Long Interval POm', 'resp. cells')
-exportgraphics(fig1p,[figdir 'puffsplit_short_long_pom.pdf'],'BackgroundColor','none','ContentType','vector')
-%RespRnorm=permute((RespR(:,1,:)-RespR(:,2,:))./(RespR(:,1,:)+RespR(:,2,:)),[1 3 2]);
-figure
-plot(categorical({'VPM Puff'}),RespRnorm(selc{1},1),'k.');hold on;
-plot(categorical({'POm Puff'}),RespRnorm(selc{2},1),'k.');hold on;
-plot(categorical({'VPM Touch'}),RespRnorm(selc{1},2),'k.');hold on;
-plot(categorical({'POm Touch'}),RespRnorm(selc{2},2),'k.');hold on;
-
-figure
-plot(categorical({'VPM Puff'}),RespRnorm(selc{1},1),'k.');hold on;
-plot(categorical({'POm Puff'}),RespRnorm(selc{2},1),'k.');hold on;
-plot(categorical({'VPM Touch'}),RespRnorm(selc{1},2),'k.');hold on;
-plot(categorical({'POm Touch'}),RespRnorm(selc{2},2),'k.');hold on;
 %% split by all together
-splits=[0 33.3333 66.6667 100];
-split_allR=true;%[true;false];%
+
+
 % split_var_nameC={'Acceleration';'Curvature';'Interval';'Velocity';'Setp';'Amp';'Angle';'Phase'};
 % type_nameC={'raw','abs','rel','absrel'};
 S=1;
@@ -302,7 +224,7 @@ for sa=1:numel(split_allR)
             STRs=STR;
 
             %%
-            C=repmat(linspace(0,.8,numel(Ilim)-1)',1,3);
+            C=repmat(linspace(.7,0,numel(Ilim)-1)',1,3);
 
             fig1= figure('Position',[50         453        1112         689]);
             tx=0;
@@ -472,17 +394,13 @@ for sa=1:numel(split_allR)
             label1=sprintf('%s<=%.3f',split_var_name,Ilim(2));
             labelend=sprintf('%s>%.3f',split_var_name,Ilim(3));
             nexttile;
-            plot_ratecomp3(STR,true(size(STR)),{label1;labelend;label1;labelend},vpmr,{'Puff','Touch'},'mean','dRate post-pre [Hz]');
+            plot_ratecomp3(STR,true(size(STR)),{label1;labelend;label1;labelend},selc{1},{'Puff','Touch'},'mean','dRate post-pre [Hz]');
             title('VPM')
             nexttile;
-            plot_ratecomp3(STR,true(size(STR)),{label1;labelend;label1;labelend},pomr,{'Puff','Touch'},'mean','dRate post-pre [Hz]');
+            plot_ratecomp3(STR,true(size(STR)),{label1;labelend;label1;labelend},selc{2},{'Puff','Touch'},'mean','dRate post-pre [Hz]');
             title('POm')
             title(tt,'Tert 1/3 comp',figadd,'Interpreter','none');
             exportgraphics(fig2,[figdir 'Comp13_PT_' figadd '.pdf'],'BackgroundColor','none','ContentType','vector')
-
-            %%
-            %         exportgraphics(fig2,[figdir 'SplitPT_distr_rate_' figadd '.pdf'],'BackgroundColor','none','ContentType','vector')
-
 
 
         end
@@ -490,82 +408,3 @@ for sa=1:numel(split_allR)
 
 
 end
-%%
-%% single cells
-%normSN=1./sum(stn,[2 3]);
-%C=colororder;
-C=repmat(linspace(0,.8,numel(Ilim)-1)',1,3);
-
-fig1= figure('Position',[50         453        1059         425]);
-tx=0;
-ML=0;
-fillpbins=[pbins fliplr(pbins)]';
-nx=2;
-tt=tiledlayout(numel(selc{nx}),1);
-s=1;
-
-
-for n=1:numel(selc{nx})
-    tx=tx+1;
-    tind(tx)=nexttile(tx);
-    temp= cell2mat(STH(selc{nx}(n),:,s))./normSN(selc{nx}(n));
-    temp=reshape(temp,size(temp,1),numel(bins)-1,size(STH,2));
-    %         SEM=permute(std(temp,0,1,'omitnan')./sqrt(sum(~any(isnan(temp),[2 3]))),[2 3 1]);
-    %         SEM=smoothdata(SEM,1,meth,smoothwidth,'SamplePoints',milliseconds(pbins));
-    M=permute(mean(temp,1,'omitnan'),[2 3 1]);
-    M=smoothdata(M,1,meth,smoothwidth,'SamplePoints',milliseconds(pbins));
-    for b=1:size(M,2)
-        %             SEMp=cat(1,M(:,b)+SEM(:,b),flipud(M(:,b)-SEM(:,b)));
-        %             fill(fillpbins, SEMp, C(b,:),'FaceAlpha',.5,'EdgeColor','none');
-        hold on;
-        %plot(pbins',conv(M(:,b),smoothker2,'same'),'Color',C(b,:));box off;
-        plot(pbins',M(:,b),'Color',C(b,:));box off;
-
-    end
-
-    ML=max(ML,max(M,[],'all'));
-
-end
-
-title(tt,sprintf('PSTHs, split by %s of %s',splitname{S},split_var_name))
-%
-for tx=1:numel(selc{nx})
-    set(tind(tx),'YLim',[0 1.1*ML])
-end
-% figure('Position',[273   110   880   762])
-% for n=1:numel(RasterHP)
-%     if size(RasterHP{n},1)>10
-%
-%         %[IPIs,IPIsortIdx]=sort(IPI{n});
-%
-%         scatter(RasterPP{n}(:,1),RasterPP{n}(:,2),'ro');hold on
-%         ax(1)=scatter(RasterHP{n}(:,1),RasterHP{n}(:,2),'k.');box off;hold off;
-%         %tIPI=IPI{n}(IPIsortIdx(RasterHP{n}(:,2)))/20;
-%
-%         %plot(-IPIs,1:numel(P_trig{n}));hold off
-%         yt=get(gca,'YTick');
-%         ipit=interp1(1:numel(IPIs),IPIs,yt(1:end-1),'linear','extrap');
-%         set(gca,'YTick',yt(1:end-1),'YTickLabel',ipit);
-%         xlim([-time_before_trig time_after_trig]);
-%         ylabel('Inter Puff interval (ms)')
-%         drawnow;
-%         ginput(1);
-%     end
-% end
-% %%
-%
-%
-% for n=1:numel(RasterHT)
-%     if size(RasterHT{n},1)>10
-%         figure('Position',[273   110   880   762])
-%         sp_tr_T=cat(2,T_trig{n}(1),diff(T_trig{n}));
-%         [ITIs,ITIsortIdx]=sort(sp_tr_T);
-%         ITIs=ITIs/20;
-%         ax(1)=scatter(RasterHT{n}(:,1),IPIsortIdx(RasterHT{n}(:,2)),'k.');box off;
-%         yt=get(gca,'YTick');
-%         ipit=interp1(1:numel(ITIs),ITIs,yt(1:end-1),'linear','extrap');
-%         set(gca,'YTick',yt(1:end-1),'YTickLabel',ipit);
-%         xlim([-time_before_trig time_after_trig]);
-%         ylabel('Inter Touch interval (ms)')
-%     end
-% end

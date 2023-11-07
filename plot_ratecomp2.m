@@ -1,6 +1,9 @@
-function plot_ratecomp2(Rates,indiv_sig,RateLabels,CellTypes,CellTypeLabels,plotMeanStd,YlabelName)
+function [pI,pC,mS]=plot_ratecomp2(Rates,indiv_sig,RateLabels,CellTypes,CellTypeLabels,plotMeanStd,YlabelName)
 %%
 %figure
+pI=nan(numel(CellTypeLabels),1);
+pC=nan(2,1);
+mS=nan(numel(CellTypeLabels),2,2);
 Rates_in=Rates;
 if size(Rates_in,3)>1
     Rates=Rates(:,:,2);
@@ -31,7 +34,9 @@ for CT=1:numel(CellTypeLabels)
         case 'mean'
             line(off+[.85 2.15],mean(selRates,1,'omitnan'),'Color','r')
     end
-    
+    pI(CT)=p;
+    mS(CT,:,:)=cat(3,mean(selRates,1,'omitnan'),std(selRates,0,1,'omitnan')./sqrt(sum(~isnan(selRates))));
+   
     errorbar(off+1.5,maxRate*1.05,.65,'horizontal','r')
     text(off+1.5,maxRate*1.05,['p=' num2str(p)],'HorizontalAlignment','center','VerticalAlignment','bottom')
     
@@ -46,6 +51,7 @@ off=0;
 if numel(CellTypeLabels)>1
     for c=1:2
         [p]=ranksum(Rates_in(CellTypes{1},c,1),Rates_in(CellTypes{2},c,1));
+        pC(c)=p;
         errorbar(off+1.85,maxRate*1.15+(off)*maxRate*0.05,1,'horizontal','r')
         text(off+1.85,maxRate*1.15+(off)*maxRate*0.05,['p=' num2str(p)],'HorizontalAlignment','center','VerticalAlignment','bottom')
         off=off+1.3;
