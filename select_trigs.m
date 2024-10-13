@@ -8,7 +8,7 @@ triglength=squeeze(DDcell(strcmp([parameter 'Length'],DDnames),1,:));
 %convert lenth 2 ind
 triglength_limit=triglength_limit*ppms;
 trigL=cell(size(trig));
-for R=1:size(DiscreteData,2);
+for R=1:size(DiscreteData,2)
     t=trig{R};
     tl=triglength{R};
     if strcmp('trigend',varargin{1})

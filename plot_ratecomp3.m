@@ -51,7 +51,7 @@ off=0;
 if numel(DeflectionTypeLabels)>1
     for c=1:2
         if any(~any(isnan(Rates_in(CellTypes,c,:)),3))
-        [p]=ranksum(Rates_in(CellTypes,c,1),Rates_in(CellTypes,c,2));
+        [p]=signrank(Rates_in(CellTypes,c,1),Rates_in(CellTypes,c,2));
         else
             p=1;
         end

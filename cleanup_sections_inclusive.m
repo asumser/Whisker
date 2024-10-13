@@ -1,9 +1,7 @@
 function [varargout]=cleanup_sections_inclusive(DD,include,safety,varargin)
 
-
 varargout=cell(size(varargin));
 DDcell=struct2cell(DD);
-
 DDnames=fieldnames(DD);
 Snames=fieldnames(DD(1).Sections);
 S=zeros(size(Snames));

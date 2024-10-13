@@ -9,7 +9,8 @@ load('C:\Data\Whisker\Wdec\Wdec_by_field.mat', 'Angle','Phase','Amp_extrema','Se
 Amp=Amp_extrema;clear Amp_extrema
 Setp=Setpoint_extrema;clear Setpoint_extrema
 minFillQ=4;
-figdir=['C:\Data\Whisker\Paperfigs_matlab\' datestr(now,'YYmmDD') '_s\'];
+%
+figdir=['C:\Data\Whisker\Paperfigs_matlab\' datestr(now,'YYmmDD') '_50_excllowtouch\'];
 set(0,'defaultfigurecolor',[1 1 1]);
 set(0, 'DefaultAxesBox', 'off')
 set(0,'defaultAxesFontName', 'Arial')
@@ -40,7 +41,7 @@ psth_relativeTime=psth_bins(1:end-1)+diff(psth_bins);
 DiscreteData=update_whisking_times(DiscreteData,Amp,20,amp_thresh,200);
 DiscreteData=mk_nowhisk_sections(DiscreteData);
 
-%% calculate supporting data
+% calculate supporting data
 clear MeanP MeanPL MeanT
 %
 %Puff
@@ -104,7 +105,10 @@ exclude={'Puff';'Light';'Exclude';'Grooming'};
 p_Touch=p_Touch{1}(:,2);
 sig_Touch=p_Touch<sig;
 H_T=cat(2,H_Touch{:})';
-has_Touch=find(~isnan(p_Touch));
+ntouches=cellfun(@numel,trigsT);
+%
+has_Touch=ntouches>=10;%find(~isnan(p_Touch));%
+
 if reassign_response_types
     typemat=false(numel(p_Touch),2+2+2+2);
  vpm=find(RecDB.DefinedNucleus=='VPM' & RecDB.FillQuality<=minFillQ & RecDB.RecordingType=='juxta');
@@ -120,6 +124,10 @@ typemat(zeta_output.p_Touch<sig,8)=true;
 
 vpmr=find(all(typemat(:,[1 3 5]),2));
 pomr=find(all(typemat(:,[2 3 5]),2));
+
+
+vpmnpr=find(all(cat(2,typemat(:,[1 3]),~typemat(:,5)),2));
+pomnpr=find(all(cat(2,typemat(:,[2 3]),~typemat(:,5)),2));
 
 vpmra=find(all(typemat(:,[1 5]),2));
 pomra=find(all(typemat(:,[2 5]),2));
@@ -146,31 +154,86 @@ vpmLr=find(all(typemat(:,[1 3 4 5]),2));
 pomLr=find(all(typemat(:,[2 3 4 5]),2));
 end
 fprintf('test interval: %u ms \n vpmr:%u, vpmra:%u , vpmLa:%u \n pomr:%u, pomra:%u , pomLa:%u \n',rate_time_after_trig,numel(vpmr),numel(vpmra),numel(vpmL),numel(pomr),numel(pomra),numel(pomL))
-VN={'condition 1','condition 2','VPM cell IDs','POm cell IDs', 'VPM N','POm N',...
+VN={'condition 1','condition 2','VPM cell IDs','POm cell IDs', 'VPM N','VPM N Animals','POm N','POm N Animals','Total N Animals',...
     'VPM mean condition 1 base','VPM sem condition 1 base','VPM mean condition 1 resp','VPM sem condition 1 resp','VPM p-value condition 1 response vs baseline',...
     'VPM mean condition 2 base','VPM sem condition 2 base','VPM mean condition 2 resp','VPM sem condition 2 resp','VPM p-value condition 2 response vs baseline',...
     'VPM p-value baseline across conditions','VPM p-value response across conditions',...
     'POm mean condition 1 base','POm sem condition 1 base','POm mean condition 1 resp','POm sem condition 1 resp','POm p-value condition 1 response vs baseline',...
     'POm mean condition 2 base','POm sem condition 2 base','POm mean condition 2 resp','POm sem condition 2 resp','POm p-value condition 2 response vs baseline',...
     'POm p-value baseline across conditions','POm p-value response across conditions',...
-    'VPM mean fold change condition 1','VPM sem fold change condition 1','VPM mean fold change condition 2','VPM sem fold change condition 2','VPM p-value fold change across conditions',...
-    'POm mean fold change condition 1','POm sem fold change condition 1','POm mean fold change condition 2','POm sem fold change condition 2','POm p-value fold change across conditions',...
-    'p-value fold change condition 1 across nuclei', 'p-value fold change condition 2 across nuclei',...
+    'VPM mean modulation condition 1','VPM sem modulation condition 1','VPM p-value modulation cond1 vs zero','VPM mean modulation condition 2','VPM sem modulation condition 2','VPM p-value modulation cond2 vs zero','VPM p-value modulation across conditions',...
+    'POm mean modulation condition 1','POm sem modulation condition 1','POm p-value modulation cond1 vs zero','POm mean modulation condition 2','POm sem modulation condition 2','POm p-value modulation cond2 vs zero','POm p-value modulation across conditions',...
+    'p-value modulation condition 1 across nuclei', 'p-value modulation condition 2 across nuclei',...
     'VPM mean fsl condition 1','VPM sem fsl condition 1','VPM mean fsl condition 2','VPM sem fsl condition 2','VPM p-value fsl across conditions',...
     'POm mean fsl condition 1','POm sem fsl condition 1','POm mean fsl condition 2','POm sem fsl condition 2','POm p-value fsl across conditions',...
     'p-value fsl condition 1 across nuclei', 'p-value fsl condition 2 across nuclei'}';
 
 
 SumStats=struct();%cell2table(cat(2,{''},{''},{nan(4,1)},{nan(4,1)},num2cell(nan(1,numel(VN)-4))),'VariableNames',VN);
-% Figure 2
+%%
+A={'N neurons'
+'N animals'
+'Baseline mean'
+'Baseline SEM'
+'p-Value Baseline across'
+'Response mean'
+'Response SEM'
+'p-Value Response across'
+'p-Value Response  = Baseline'
+'Mean modulation'
+'Mean modulation SEM'
+'p-Value modulation = zero'
+'p-Value modulation across'
+'First spike latency mean'
+'First spike latency SEM'
+'p-Value First spike latency across'
+'N neurons'
+'N animals'
+'Baseline mean'
+'Baseline SEM'
+'p-Value Baseline across'
+'Response mean'
+'Response SEM'
+'p-Value Response across'
+'p-Value Response  = Baseline'
+'Mean modulation'
+'Mean modulation SEM'
+'p-Value modulation = zero'
+'p-Value modulation across'
+'First spike latency mean'
+'First spike latency SEM'
+'p-Value First spike latency across'
+'N animals total'
+'p-Value Baseline'
+'p-Value Response'
+'p-Value modulation'
+'p-Value First spike latency'};
+A=cat(2,cat(1,repmat({'VPM'},16,1),repmat({'POm'},16,1),repmat({'VPM vs. POm'},5,1)),A,num2cell(nan(37,10)));
+
+SumStatTable=cell2table(A,'VariableNames',{'Nucleus','ValName','Puff','Touch','Q-Puff','W-Puff','Quiescence spont','Whisking spont','nL-Puff','L-Puff','nL-Whisking','L-Whisking'});
+
+
+%% Figure 2
 Fig_no='Fig2_';
 SumStatLine=1;
+
 SumStats(SumStatLine).condition_1='Puff';
 SumStats(SumStatLine).condition_2='Touch';
 SumStats(SumStatLine).VPM_cell_IDs=vpmr';
 SumStats(SumStatLine).POm_cell_IDs=pomr';
+[N_animals]=get_N_animals(SumStats(SumStatLine).VPM_cell_IDs,SumStats(SumStatLine).POm_cell_IDs,RecDB);
 SumStats(SumStatLine).VPM_N=numel(vpmr);
+SumStats(SumStatLine).VPM_N_animals=N_animals(3);
 SumStats(SumStatLine).POm_N=numel(pomr);
+SumStats(SumStatLine).POm_N_animals=N_animals(4);
+SumStats(SumStatLine).Total_N_animals=N_animals(1);
+C=3;
+SumStatTable{1,C}=SumStats(SumStatLine).VPM_N;
+SumStatTable{2,C}=SumStats(SumStatLine).VPM_N_animals;
+SumStatTable{17,C}=SumStats(SumStatLine).POm_N;
+SumStatTable{18,C}=SumStats(SumStatLine).POm_N_animals;
+SumStatTable{33,C}=SumStats(SumStatLine).Total_N_animals;
+
 %puff psths
 parameter='Puff';
 contPlot={MeanWp,MeanP,MeanAp};
@@ -220,6 +283,8 @@ SumStats(SumStatLine).VPM_p_resp_cond12=pC(2);
 
 
 
+
+%
 figure('Position',[910   176   500   588])
 [pI,pC,mS]=plot_ratecomp3(cat(3,H_P,H_T),cat(2,sig_Puff,sig_Touch),{'0';'1';'0';'1'},pomr,{'Puff','Touch'},'mean','Rate [Hz]');
 title('Puff/Touch Response POm', 'resp cells w touch')
@@ -238,6 +303,8 @@ SumStats(SumStatLine).POm_p_cond2=pI(2);
 SumStats(SumStatLine).POm_p_base_cond12=pC(1);
 SumStats(SumStatLine).POm_p_resp_cond12=pC(2);
 
+
+
 pRc=nan(2,2);
 for c=1:2
 pRc(1,c)=ranksum(H_P(vpmr,c,1),H_P(pomr,c,1));
@@ -245,7 +312,7 @@ end
 for c=1:2
 pRc(2,c)=ranksum(H_T(vpmr,c,1),H_T(pomr,c,1));
 end
-
+%
 % touch puff comp
 p_PuffPTr=sig_test_comp_trig({p_trigs;ttrigs},DiscreteData,rate_bins,2,'both',ppms);
 p_PuffPTb=sig_test_comp_trig({p_trigs;ttrigs},DiscreteData,rate_bins,1,'both',ppms);
@@ -254,76 +321,65 @@ sig_PTb=p_PuffPTb<sig;
 tempD=log2(cat(2,H_P(:,2)./H_P(:,1),H_T(:,2)./H_T(:,1)));
 figure('Position',[ 910   176   500   588])
 plot_ratecomp2(tempD,sig_PTr,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','log2 Rate fold change');title('Touch/Puff fold change Response, responsive cells');
+set(gca,'YTick',log2([0.5 1:10 12:2:20 24:4:64]))
+set(gca,'YTickLabel',2.^get(gca,'YTick'))
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'foldchangeRatesTouchVsPuffRespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
+
+tempD=cat(2,mod_depth(H_P),mod_depth(H_T));
+figure('Position',[ 910   176   500   588])
+[pI,pC,mS,p0]=plot_ratecomp2(tempD,sig_PTr,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','mod depth');title('Touch/Puff modulation, responsive cells')
+
+ if write_figs;exportgraphics (gcf,[figdir Fig_no 'modulationTouchVsPuffRespondingCellsLog.pdf'], 'BackgroundColor','none','ContentType','vector');end
+
 
 tempD=cat(2,H_P(:,2)./H_P(:,1),H_T(:,2)./H_T(:,1));
 figure('Position',[ 910   176   500   588])
-[pI,pC,mS]=plot_ratecomp2(tempD,sig_PTr,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','Rate fold change');title('Touch/Puff fold change Response, responsive cells')
- 
-SumStats(SumStatLine).VPM_mean_foldchange_cond1=mS(1,1,1);
-SumStats(SumStatLine).VPM_sem_foldchange_cond1=mS(1,1,2);
-SumStats(SumStatLine).VPM_mean_foldchange_cond2=mS(1,2,1);
-SumStats(SumStatLine).VPM_sem_foldchange_cond2=mS(1,2,2);
-SumStats(SumStatLine).VPM_p_foldchange_cond12=pI(1);
+plot_ratecomp2(tempD,sig_PTr,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','Rate fold change');title('Touch/Puff fold change Response, responsive cells')
+ set(gca,'YScale','log')
+ set(gca,'YTick',[0.5 1:10 12:2:20 25 30 35])
+ if write_figs;exportgraphics (gcf,[figdir Fig_no 'foldchangeRatesTouchVsPuffRespondingCellsLog.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
-SumStats(SumStatLine).POm_mean_foldchange_cond1=mS(2,1,1);
-SumStats(SumStatLine).POm_sem_foldchange_cond1=mS(2,1,2);
-SumStats(SumStatLine).POm_mean_foldchange_cond2=mS(2,2,1);
-SumStats(SumStatLine).POm_sem_foldchange_cond2=mS(2,2,2);
-SumStats(SumStatLine).POm_p_foldchange_cond12=pI(2);
-
-SumStats(SumStatLine).VPMPOm_p_foldchange_cond1=pC(1);
-SumStats(SumStatLine).VPMPOm_p_foldchange_cond2=pC(2);
-
-
-
+SumStats(SumStatLine).VPM_mean_modulation_cond1=mS(1,1,1);
+SumStats(SumStatLine).VPM_sem_modulation_cond1=mS(1,1,2);
+SumStats(SumStatLine).VPM_p_modulation_cond10=p0(1,1);
+SumStats(SumStatLine).VPM_mean_modulation_cond2=mS(1,2,1);
+SumStats(SumStatLine).VPM_sem_modulation_cond2=mS(1,2,2);
+SumStats(SumStatLine).VPM_p_modulation_cond20=p0(1,2);
+SumStats(SumStatLine).VPM_p_modulation_cond12=pI(1);
+SumStats(SumStatLine).POm_mean_modulation_cond1=mS(2,1,1);
+SumStats(SumStatLine).POm_sem_modulation_cond1=mS(2,1,2);
+SumStats(SumStatLine).POm_p_modulation_cond10=p0(2,1);
+SumStats(SumStatLine).POm_mean_modulation_cond2=mS(2,2,1);
+SumStats(SumStatLine).POm_sem_modulation_cond2=mS(2,2,2);
+SumStats(SumStatLine).POm_p_modulation_cond20=p0(2,2);
+SumStats(SumStatLine).POm_p_modulation_cond12=pI(2);
+SumStats(SumStatLine).VPMPOm_p_modulation_cond1=pC(1);
+SumStats(SumStatLine).VPMPOm_p_modulation_cond2=pC(2);
 SumStats(SumStatLine).VPMPOm_p_cond1_base=pRc(1,1);
 SumStats(SumStatLine).VPMPOm_p_cond2_base=pRc(2,1);
 SumStats(SumStatLine).VPMPOm_p_cond1_resp=pRc(1,2);
 SumStats(SumStatLine).VPMPOm_p_cond2_resp=pRc(2,2);
-% 
-% figure('Position',[910   176   500   588])
-% plot_ratecomp3(cat(3,H_P,H_T),cat(2,sig_Puff,sig_Touch),{'0';'1';'0';'1'},vpm,{'Puff','Touch'},'mean','Rate [Hz]');
-% title('Puff/Touch Response VPM', 'all cells')
-% if write_figs;exportgraphics(gcf,[figdir Fig_no 'RatesPT_VPM_AllCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
-% 
-% figure('Position',[910   176   500   588])
-% plot_ratecomp3(cat(3,H_P,H_T),cat(2,sig_Puff,sig_Touch),{'0';'1';'0';'1'},pom,{'Puff','Touch'},'mean','Rate [Hz]');
-% title('Puff/Touch Response POm', 'all cells')
-% if write_figs;exportgraphics(gcf,[figdir Fig_no 'RatesPT_POm_AllCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
-% 
-% figure('Position',[910   176   500   588])
-% plot_ratecomp3(cat(3,H_P,H_T),cat(2,sig_Puff,sig_Touch),{'0';'1';'0';'1'},vpmra,{'Puff','Touch'},'mean','Rate [Hz]');
-% title('Puff/Touch Response VPM', 'resp cells')
-% if write_figs;exportgraphics(gcf,[figdir Fig_no 'RatesPT_VPM_RespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
-% 
-% figure('Position',[910   176   500   588])
-% plot_ratecomp3(cat(3,H_P,H_T),cat(2,sig_Puff,sig_Touch),{'0';'1';'0';'1'},pomra,{'Puff','Touch'},'mean','Rate [Hz]');
-% title('Puff/Touch Response POm', 'resp cells')
-% if write_figs;exportgraphics(gcf,[figdir Fig_no 'RatesPT_POm_RespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 
-% 
-% tempD=cat(2,diff(H_P,1,2),diff(H_T,1,2));
-% figure('Position',[ 910   176   500   588])
-% plot_ratecomp2(tempD,sig_PTr,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','deltaRate [Hz]');title('diffTouch/Puff Response, responsive cells')
-% if write_figs;exportgraphics (gcf,[figdir Fig_no 'diffRatesTouchVsPuffRespondingCells.pdf'],'BackgroundColor','none','ContentType','vector');end
-% tempD=cat(2,H_P(:,1),H_T(:,1));
-% figure('Position',[ 910   176   500   588])
-% plot_ratecomp2(tempD,sig_PTb,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','Rate [Hz]');title('baseline before Touch/Puff activity, responsive cells')
-% if write_figs;exportgraphics (gcf,[figdir Fig_no 'baseRatesTouchVsPuffRespondingCells.pdf'],'BackgroundColor','none','ContentType','vector');end
-% tempD=cat(2,H_P(:,2),H_T(:,2));
-% figure('Position',[ 910   176   500   588])
-% plot_ratecomp2(tempD,sig_PTr,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','Rate [Hz]');title('Touch/Puff Response, responsive cells')
-% if write_figs;exportgraphics (gcf,[figdir Fig_no 'absRatesTouchVsPuffRespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
-% tempD=cat(2,H_P(:,2)./H_P(:,1),H_T(:,2)./H_T(:,1));
-% figure('Position',[ 910   176   500   588])
-% plot_ratecomp2(tempD,sig_PTr,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','Rate fold change');title('Touch/Puff fold change Response, responsive cells')
-% if write_figs;exportgraphics (gcf,[figdir Fig_no 'foldchangeRatesNoLogTouchVsPuffRespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
+% summary no puff / touch
+figure('Position',[265         633        1220         587])
+tt=tiledlayout(1,3);
+title(tt,'non-puff-responsive neurons')
+nexttile(1);
+[pI,pC,mS]=plot_ratecomp3(cat(3,H_P,H_T),cat(2,sig_Puff,sig_Touch),{'0';'1';'0';'1'},vpmnpr,{'Puff','Touch'},'mean','Rate [Hz]');
+title('Puff/Touch Response VPM')
+nexttile(2);
+[pI,pC,mS]=plot_ratecomp3(cat(3,H_P,H_T),cat(2,sig_Puff,sig_Touch),{'0';'1';'0';'1'},pomnpr,{'Puff','Touch'},'mean','Rate [Hz]');
+title('Puff/Touch Response POm')
+nexttile(3);
+tempD=cat(2,mod_depth(H_P),mod_depth(H_T));
+[pI,pC,mS,p0]=plot_ratecomp2(tempD,true(size(sig_PTr)),{'Puff','Touch'},{vpmnpr;pomnpr},{'VPM';'POm'},'mean','mod depth');
+title('Touch/Puff modulation')
+ if write_figs;exportgraphics (gcf,[figdir 'SuppNonPuffRespTouch.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 
-
-%% Supp Figure 2
+%%
+% Supp Figure 2
 Fig_no='EDFig2_';
 lat_binsize=1;
 lat_time_before_trig=0;
@@ -351,7 +407,7 @@ for n=1:numel(RasterHPL)
     first_spike_times{n,2}(a)=RasterHTL{n}(ia,1);
 if all(cellfun(@(x) any(~isnan(x)),first_spike_times(n,:)))
      [fsl_p(n)]=ranksum(first_spike_times{n,1},first_spike_times{n,2});
-end
+end 
 end
 %
 FSLavg=cellfun(@(x) mean(x,'omitnan'),first_spike_times);
@@ -369,21 +425,76 @@ SumStats(SumStatLine).VPM_sem_fsl_cond1=mS(1,1,2);
 SumStats(SumStatLine).VPM_mean_fsl_cond2=mS(1,2,1);
 SumStats(SumStatLine).VPM_sem_fsl_cond2=mS(1,2,2);
 SumStats(SumStatLine).VPM_p_fsl_cond12=pI(1);
-
 SumStats(SumStatLine).POm_mean_fsl_cond1=mS(2,1,1);
 SumStats(SumStatLine).POm_sem_fsl_cond1=mS(2,1,2);
 SumStats(SumStatLine).POm_mean_fsl_cond2=mS(2,2,1);
 SumStats(SumStatLine).POm_sem_fsl_cond2=mS(2,2,2);
 SumStats(SumStatLine).POm_p_fsl_cond12=pI(2);
-
 SumStats(SumStatLine).VPMPOm_p_fsl_cond1=pC(1);
 SumStats(SumStatLine).VPMPOm_p_fsl_cond2=pC(2);
 
 
+XCond=3;
+SumStatTable{3,XCond}=SumStats(SumStatLine).VPM_mean_cond1_base;
+SumStatTable{4,XCond}=SumStats(SumStatLine).VPM_sem_cond1_base;
+SumStatTable{6,XCond}=SumStats(SumStatLine).VPM_mean_cond1_resp;
+SumStatTable{7,XCond}=SumStats(SumStatLine).VPM_sem_cond1_resp;
+SumStatTable{9,XCond}=SumStats(SumStatLine).VPM_p_cond1;
+SumStatTable{3,XCond+1}=SumStats(SumStatLine).VPM_mean_cond2_base;
+SumStatTable{4,XCond+1}=SumStats(SumStatLine).VPM_sem_cond2_base;
+SumStatTable{6,XCond+1}=SumStats(SumStatLine).VPM_mean_cond2_resp;
+SumStatTable{7,XCond+1}=SumStats(SumStatLine).VPM_sem_cond2_resp;
+SumStatTable{9,XCond+1}=SumStats(SumStatLine).VPM_p_cond2;
+SumStatTable{5,XCond}=SumStats(SumStatLine).VPM_p_base_cond12;
+SumStatTable{8,XCond}=SumStats(SumStatLine).VPM_p_resp_cond12;
+SumStatTable{16+3,XCond}=SumStats(SumStatLine).POm_mean_cond1_base;
+SumStatTable{16+4,XCond}=SumStats(SumStatLine).POm_sem_cond1_base;
+SumStatTable{16+6,XCond}=SumStats(SumStatLine).POm_mean_cond1_resp;
+SumStatTable{16+7,XCond}=SumStats(SumStatLine).POm_sem_cond1_resp;
+SumStatTable{16+9,XCond}=SumStats(SumStatLine).POm_p_cond1;
+SumStatTable{16+3,XCond+1}=SumStats(SumStatLine).POm_mean_cond2_base;
+SumStatTable{16+4,XCond+1}=SumStats(SumStatLine).POm_sem_cond2_base;
+SumStatTable{16+6,XCond+1}=SumStats(SumStatLine).POm_mean_cond2_resp;
+SumStatTable{16+7,XCond+1}=SumStats(SumStatLine).POm_sem_cond2_resp;
+SumStatTable{16+9,XCond+1}=SumStats(SumStatLine).POm_p_cond2;
+SumStatTable{16+5,XCond}=SumStats(SumStatLine).POm_p_base_cond12;
+SumStatTable{16+8,XCond}=SumStats(SumStatLine).POm_p_resp_cond12;
+SumStatTable{10,XCond}=SumStats(SumStatLine).VPM_mean_modulation_cond1;
+SumStatTable{11,XCond}=SumStats(SumStatLine).VPM_sem_modulation_cond1;
+SumStatTable{12,XCond}=SumStats(SumStatLine).VPM_p_modulation_cond10;
+SumStatTable{10,XCond+1}=SumStats(SumStatLine).VPM_mean_modulation_cond2;
+SumStatTable{11,XCond+1}=SumStats(SumStatLine).VPM_sem_modulation_cond2;
+SumStatTable{12,XCond+1}=SumStats(SumStatLine).VPM_p_modulation_cond20;
+SumStatTable{13,XCond}=SumStats(SumStatLine).VPM_p_modulation_cond12;
+SumStatTable{16+10,XCond}=SumStats(SumStatLine).POm_mean_modulation_cond1;
+SumStatTable{16+11,XCond}=SumStats(SumStatLine).POm_sem_modulation_cond1;
+SumStatTable{16+12,XCond}=SumStats(SumStatLine).POm_p_modulation_cond10;
+SumStatTable{16+10,XCond+1}=SumStats(SumStatLine).POm_mean_modulation_cond2;
+SumStatTable{16+11,XCond+1}=SumStats(SumStatLine).POm_sem_modulation_cond2;
+SumStatTable{16+12,XCond+1}=SumStats(SumStatLine).POm_p_modulation_cond20;
+SumStatTable{16+13,XCond}=SumStats(SumStatLine).POm_p_modulation_cond12;
+SumStatTable{36,XCond}=SumStats(SumStatLine).VPMPOm_p_modulation_cond1;
+SumStatTable{36,XCond+1}=SumStats(SumStatLine).VPMPOm_p_modulation_cond2;
+SumStatTable{34,XCond}=SumStats(SumStatLine).VPMPOm_p_cond1_base;
+SumStatTable{34,XCond+1}=SumStats(SumStatLine).VPMPOm_p_cond2_base;
+SumStatTable{35,XCond}=SumStats(SumStatLine).VPMPOm_p_cond1_resp;
+SumStatTable{35,XCond+1}=SumStats(SumStatLine).VPMPOm_p_cond2_resp;
+SumStatTable{14,XCond}=SumStats(SumStatLine).VPM_mean_fsl_cond1;
+SumStatTable{15,XCond}=SumStats(SumStatLine).VPM_sem_fsl_cond1;
+SumStatTable{14,XCond+1}=SumStats(SumStatLine).VPM_mean_fsl_cond2;
+SumStatTable{15,XCond+1}=SumStats(SumStatLine).VPM_sem_fsl_cond2;
+SumStatTable{16,XCond}=SumStats(SumStatLine).VPM_p_fsl_cond12;
+SumStatTable{16+14,XCond}=SumStats(SumStatLine).POm_mean_fsl_cond1;
+SumStatTable{16+15,XCond}=SumStats(SumStatLine).POm_sem_fsl_cond1;
+SumStatTable{16+14,XCond+1}=SumStats(SumStatLine).POm_mean_fsl_cond2;
+SumStatTable{16+15,XCond+1}=SumStats(SumStatLine).POm_sem_fsl_cond2;
+SumStatTable{16+16,XCond}=SumStats(SumStatLine).POm_p_fsl_cond12;
+SumStatTable{37,XCond}=SumStats(SumStatLine).VPMPOm_p_fsl_cond1;
+SumStatTable{37,XCond+1}=SumStats(SumStatLine).VPMPOm_p_fsl_cond2;
 % 
-% figure('Position',[ 910   176   500   588])
-% plot_ratecomp2(FSLstd,FSLsig,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','std first spike latency (ms)');title('std first spike latency')
-% if write_figs;exportgraphics (gcf,[figdir Fig_no 'stdfirstspikelatency.pdf'],'BackgroundColor','none','ContentType','vector');end
+ figure('Position',[ 910   176   500   588])
+[pIs,pCs,mSs]=plot_ratecomp2(FSLstd,FSLsig,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','std first spike latency (ms)');title('std first spike latency')
+ if write_figs;exportgraphics (gcf,[figdir Fig_no 'stdfirstspikelatency.pdf'],'BackgroundColor','none','ContentType','vector');end
 % 
 % figure('Position',[ 910   176   500   588])
 % plot_ratecomp2(FSLmed,FSLsig,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','first spike latency (ms)');title('median first spike latency')
@@ -396,9 +507,9 @@ SumStats(SumStatLine).VPMPOm_p_fsl_cond2=pC(2);
 % figure('Position',[ 910   176   500   588])
 % plot_ratecomp2(FSLany,FSLsig,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','response probability');title('spike in window')
 % if write_figs;exportgraphics (gcf,[figdir Fig_no 'responseprobability.pdf'],'BackgroundColor','none','ContentType','vector');end
+%
 
-
-% Figure 1
+%% Figure 1
 Fig_no='Fig1_';
 cell_example=vpmr(1);
 trigs_e=[trigsP(cell_example);trigsT(cell_example)];
@@ -471,17 +582,25 @@ exportgraphics(fig1vv,[figdir Fig_no 'cell_locations_r.pdf'],'BackgroundColor','
 % 
 % linkaxes(a,'x')
 
-% Figure 3
+%% Figure 3
 Fig_no='Fig3_';
 SumStatLine=2;
 SumStats(SumStatLine).condition_1='Quiescience';
 SumStats(SumStatLine).condition_2='Whisking';
-SumStats(SumStatLine).VPM_cell_IDs=vpmr';
-SumStats(SumStatLine).POm_cell_IDs=pomr';
-SumStats(SumStatLine).VPM_N=numel(vpmr);
-SumStats(SumStatLine).POm_N=numel(pomr);
-
-
+SumStats(SumStatLine).VPM_cell_IDs=vpmra';
+SumStats(SumStatLine).POm_cell_IDs=pomra';
+[N_animals]=get_N_animals(SumStats(SumStatLine).VPM_cell_IDs,SumStats(SumStatLine).POm_cell_IDs,RecDB);
+SumStats(SumStatLine).VPM_N=numel(vpmra);
+SumStats(SumStatLine).VPM_N_animals=N_animals(3);
+SumStats(SumStatLine).POm_N=numel(pomra);
+SumStats(SumStatLine).POm_N_animals=N_animals(4);
+SumStats(SumStatLine).Total_N_animals=N_animals(1);
+C=8;
+SumStatTable{1,C}=SumStats(SumStatLine).VPM_N;
+SumStatTable{2,C}=SumStats(SumStatLine).VPM_N_animals;
+SumStatTable{17,C}=SumStats(SumStatLine).POm_N;
+SumStatTable{18,C}=SumStats(SumStatLine).POm_N_animals;
+SumStatTable{33,C}=SumStats(SumStatLine).Total_N_animals;
 shuffN=1e4;
 outsafety=250;%ms
 insafety=25;
@@ -504,21 +623,62 @@ figure('Position',[ 910   176   500   588])
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'WhiskingRatesGenrealRespondingCellsWTouch.pdf'], 'BackgroundColor','none','ContentType','vector');end
 %
 
+%%
 
 SumStats(SumStatLine).VPM_mean_cond1_resp=mS(1,1,1);
 SumStats(SumStatLine).VPM_sem_cond1_resp=mS(1,1,2);
 SumStats(SumStatLine).VPM_mean_cond2_resp=mS(1,2,1);
 SumStats(SumStatLine).VPM_sem_cond2_resp=mS(1,2,2);
 SumStats(SumStatLine).VPM_p_resp_cond12=pI(1);
-
 SumStats(SumStatLine).POm_mean_cond1_resp=mS(2,1,1);
 SumStats(SumStatLine).POm_sem_cond1_resp=mS(2,1,2);
 SumStats(SumStatLine).POm_mean_cond2_resp=mS(2,2,1);
 SumStats(SumStatLine).POm_sem_cond2_resp=mS(2,2,2);
 SumStats(SumStatLine).POm_p_resp_cond12=pI(2);
-
 SumStats(SumStatLine).VPMPOm_p_cond1_resp=pC(1);
 SumStats(SumStatLine).VPMPOm_p_cond2_resp=pC(2);
+
+
+MD_spontWhisk=mod_depth(RatesQ,RatesW);
+figure('Position',[ 910   176   500   588])
+[pI,pC,mS,p0]=plot_ratecomp2(repmat(MD_spontWhisk,1,2),RatesWp<.05,{'spont Whisk','spont Whisk'},{vpmra;pomra},{'VPM';'POm'},'mean','mod depth');title('Whisking modulation, responsive cells')
+
+ if write_figs;exportgraphics (gcf,[figdir Fig_no 'modulationWhiskingRespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
+
+
+SumStats(SumStatLine).VPM_mean_modulation_cond2=mS(1,2,1);
+SumStats(SumStatLine).VPM_sem_modulation_cond2=mS(1,2,2);
+SumStats(SumStatLine).VPM_p_modulation_cond20=p0(1,2);
+SumStats(SumStatLine).POm_mean_modulation_cond2=mS(2,2,1);
+SumStats(SumStatLine).POm_sem_modulation_cond2=mS(2,2,2);
+SumStats(SumStatLine).POm_p_modulation_cond20=p0(2,2);
+SumStats(SumStatLine).VPMPOm_p_modulation_cond2=pC(2);
+
+XCond=8;
+SumStatTable{3,XCond}=SumStats(SumStatLine).VPM_mean_cond1_resp;
+SumStatTable{4,XCond}=SumStats(SumStatLine).VPM_sem_cond1_resp;
+SumStatTable{6,XCond}=SumStats(SumStatLine).VPM_mean_cond2_resp;
+SumStatTable{7,XCond}=SumStats(SumStatLine).VPM_sem_cond2_resp;
+ SumStatTable{9,XCond}=SumStats(SumStatLine).VPM_p_resp_cond12;
+% SumStatTable{8,XCond}=SumStats(SumStatLine).VPM_p_resp_cond12;
+SumStatTable{16+3,XCond}=SumStats(SumStatLine).POm_mean_cond1_resp;
+SumStatTable{16+4,XCond}=SumStats(SumStatLine).POm_sem_cond1_resp;
+SumStatTable{16+6,XCond}=SumStats(SumStatLine).POm_mean_cond2_resp;
+SumStatTable{16+7,XCond}=SumStats(SumStatLine).POm_sem_cond2_resp;
+SumStatTable{16+9,XCond}=SumStats(SumStatLine).POm_p_resp_cond12;
+%SumStatTable{16+8,XCond}=SumStats(SumStatLine).POm_p_resp_cond12;
+SumStatTable{10,XCond}=SumStats(SumStatLine).VPM_mean_modulation_cond2;
+SumStatTable{11,XCond}=SumStats(SumStatLine).VPM_sem_modulation_cond2;
+SumStatTable{12,XCond}=SumStats(SumStatLine).VPM_p_modulation_cond20;
+% SumStatTable{13,XCond}=SumStats(SumStatLine).VPM_p_modulation_cond12;
+SumStatTable{16+10,XCond}=SumStats(SumStatLine).POm_mean_modulation_cond2;
+SumStatTable{16+11,XCond}=SumStats(SumStatLine).POm_sem_modulation_cond2;
+SumStatTable{16+12,XCond}=SumStats(SumStatLine).POm_p_modulation_cond20;
+% SumStatTable{16+13,XCond}=SumStats(SumStatLine).POm_p_modulation_cond12;
+SumStatTable{36,XCond}=SumStats(SumStatLine).VPMPOm_p_modulation_cond2;
+SumStatTable{34,XCond}=SumStats(SumStatLine).VPMPOm_p_cond1_resp;
+SumStatTable{35,XCond}=SumStats(SumStatLine).VPMPOm_p_cond2_resp;
+
 
 
 exclude={'Pole';'Light';'Exclude';'Grooming';'Puff'};
@@ -614,7 +774,7 @@ histogram(PhaseMod.SNR(cell_select{2}),0:.25:max(PhaseMod.SNR(cat(1,cell_select{
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'phase_mod_whisking_in_air.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 
-
+%%
 
 
 SumStatLine=3;
@@ -622,8 +782,19 @@ SumStats(SumStatLine).condition_1='Puff nonWhisking';
 SumStats(SumStatLine).condition_2='Puff Whisking';
 SumStats(SumStatLine).VPM_cell_IDs=vpmr';
 SumStats(SumStatLine).POm_cell_IDs=pomr';
+[N_animals]=get_N_animals(SumStats(SumStatLine).VPM_cell_IDs,SumStats(SumStatLine).POm_cell_IDs,RecDB);
 SumStats(SumStatLine).VPM_N=numel(vpmr);
+SumStats(SumStatLine).VPM_N_animals=N_animals(3);
 SumStats(SumStatLine).POm_N=numel(pomr);
+SumStats(SumStatLine).POm_N_animals=N_animals(4);
+SumStats(SumStatLine).Total_N_animals=N_animals(1);
+
+C=5;
+SumStatTable{1,C}=SumStats(SumStatLine).VPM_N;
+SumStatTable{2,C}=SumStats(SumStatLine).VPM_N_animals;
+SumStatTable{17,C}=SumStats(SumStatLine).POm_N;
+SumStatTable{18,C}=SumStats(SumStatLine).POm_N_animals;
+SumStatTable{33,C}=SumStats(SumStatLine).Total_N_animals;
 
 parameter='Puff';
 exclude={'Pole';'Light';'Exclude';'Grooming'};
@@ -656,6 +827,9 @@ if write_figs;exportgraphics(gcf,[figdir Fig_no 'Pop_Puff_W_instRateResp_' dates
 H_PW=cat(2,H_PuffW{:})';
 p_PuffW=p_PuffW{1}(:,2);
 sig_PuffW=p_PuffW<sig;
+
+
+
 
 figure('Position',[910   176   500   588])
 [pI,pC,mS]=plot_ratecomp3(cat(3,H_PnW,H_PW),cat(2,sig_PuffnW,sig_PuffW),{'0';'1';'0';'1'},vpmr,{'QPuff','WPuff'},'mean','Rate [Hz]');
@@ -723,26 +897,40 @@ figure('Position',[ 910   176   500   588])
 plot_ratecomp2(tempD,sig_PuffQWr,{'QPuff','WPuff'},{vpmr;pomr},{'VPM';'POm'},'mean','log2 Rate fold change');title('Q/W Puff fold change Response, responsive cells')
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'foldchangeRatesQWRespondingCellsWT.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
+tempD=cat(2,mod_depth(H_PnW),mod_depth(H_PW));
+figure('Position',[ 910   176   500   588])
+[pI,pC,mS,p0]=plot_ratecomp2(tempD,sig_PuffQWr,{'QPuff','WPuff'},{vpmr;pomr},{'VPM';'POm'},'mean','mod depth');title('Q/W Puff modulation, responsive cells')
+
+ if write_figs;exportgraphics (gcf,[figdir Fig_no 'modulationQWRespondingCellsLog.pdf'], 'BackgroundColor','none','ContentType','vector');end
+
 tempD=cat(2,H_PnW(:,2)./H_PnW(:,1),H_PW(:,2)./H_PW(:,1));
 figure('Position',[ 910   176   500   588])
-[pI,pC,mS]=plot_ratecomp2(tempD,sig_PuffQWr,{'QPuff','WPuff'},{vpmr;pomr},{'VPM';'POm'},'mean','log2 Rate fold change');title('Q/W Puff fold change Response, responsive cells')
+plot_ratecomp2(tempD,sig_PuffQWr,{'QPuff','WPuff'},{vpmr;pomr},{'VPM';'POm'},'mean','log2 Rate fold change');title('Q/W Puff fold change Response, responsive cells')
+ set(gca,'YScale','log')
+ set(gca,'YTick',[0.5 1:10 12:2:20 30 40 50 60])
+ ylim([0.5 80])
+ if write_figs;exportgraphics (gcf,[figdir Fig_no 'foldchangeRatesQWRespondingCellsLog.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 
-SumStats(SumStatLine).VPM_mean_foldchange_cond1=mS(1,1,1);
-SumStats(SumStatLine).VPM_sem_foldchange_cond1=mS(1,1,2);
-SumStats(SumStatLine).VPM_mean_foldchange_cond2=mS(1,2,1);
-SumStats(SumStatLine).VPM_sem_foldchange_cond2=mS(1,2,2);
-SumStats(SumStatLine).VPM_p_foldchange_cond12=pI(1);
+SumStats(SumStatLine).VPM_mean_modulation_cond1=mS(1,1,1);
+SumStats(SumStatLine).VPM_sem_modulation_cond1=mS(1,1,2);
+SumStats(SumStatLine).VPM_p_modulation_cond10=p0(1,1);
+SumStats(SumStatLine).VPM_mean_modulation_cond2=mS(1,2,1);
+SumStats(SumStatLine).VPM_sem_modulation_cond2=mS(1,2,2);
+SumStats(SumStatLine).VPM_p_modulation_cond20=p0(1,2);
+SumStats(SumStatLine).VPM_p_modulation_cond12=pI(1);
 
-SumStats(SumStatLine).POm_mean_foldchange_cond1=mS(2,1,1);
-SumStats(SumStatLine).POm_sem_foldchange_cond1=mS(2,1,2);
-SumStats(SumStatLine).POm_mean_foldchange_cond2=mS(2,2,1);
-SumStats(SumStatLine).POm_sem_foldchange_cond2=mS(2,2,2);
-SumStats(SumStatLine).POm_p_foldchange_cond12=pI(2);
+SumStats(SumStatLine).POm_mean_modulation_cond1=mS(2,1,1);
+SumStats(SumStatLine).POm_sem_modulation_cond1=mS(2,1,2);
+SumStats(SumStatLine).POm_p_modulation_cond10=p0(2,1);
+SumStats(SumStatLine).POm_mean_modulation_cond2=mS(2,2,1);
+SumStats(SumStatLine).POm_sem_modulation_cond2=mS(2,2,2);
+SumStats(SumStatLine).POm_p_modulation_cond20=p0(2,2);
+SumStats(SumStatLine).POm_p_modulation_cond12=pI(2);
 
-SumStats(SumStatLine).VPMPOm_p_foldchange_cond1=pC(1);
-SumStats(SumStatLine).VPMPOm_p_foldchange_cond2=pC(2);
-
+SumStats(SumStatLine).VPMPOm_p_modulation_cond1=pC(1);
+SumStats(SumStatLine).VPMPOm_p_modulation_cond2=pC(2);
+%%
 % figure('Position',[38 260 1413 525],'Color','White');Name='Puff noWh allResp';
 % plot_Pop_PSTH_wrapper3(parameter, DiscreteData,puff_triglength_limit,ppms,psth_time_before_trig,psth_time_after_trig,exclude,psth_safety_margin,psth_binsize,[],Name,{vpmra;pomra},{'VPM';'POm'},include,'latency',-inf,contPlot,{'meanbefore','scaleminmax','mono'},'baseline corr. whisker angle');
 % if write_figs;exportgraphics(gcf,[figdir Fig_no 'Pop_including_notouchneurons_Puff_nW_instRateResp_' datestr(now,'yymmdd') '.pdf'],'BackgroundColor','none','ContentType','vector');end
@@ -867,7 +1055,63 @@ SumStats(SumStatLine).POm_p_fsl_cond12=pI(2);
 SumStats(SumStatLine).VPMPOm_p_fsl_cond1=pC(1);
 SumStats(SumStatLine).VPMPOm_p_fsl_cond2=pC(2);
 
-
+XCond=5;
+SumStatTable{3,XCond}=SumStats(SumStatLine).VPM_mean_cond1_base;
+SumStatTable{4,XCond}=SumStats(SumStatLine).VPM_sem_cond1_base;
+SumStatTable{6,XCond}=SumStats(SumStatLine).VPM_mean_cond1_resp;
+SumStatTable{7,XCond}=SumStats(SumStatLine).VPM_sem_cond1_resp;
+SumStatTable{9,XCond}=SumStats(SumStatLine).VPM_p_cond1;
+SumStatTable{3,XCond+1}=SumStats(SumStatLine).VPM_mean_cond2_base;
+SumStatTable{4,XCond+1}=SumStats(SumStatLine).VPM_sem_cond2_base;
+SumStatTable{6,XCond+1}=SumStats(SumStatLine).VPM_mean_cond2_resp;
+SumStatTable{7,XCond+1}=SumStats(SumStatLine).VPM_sem_cond2_resp;
+SumStatTable{9,XCond+1}=SumStats(SumStatLine).VPM_p_cond2;
+SumStatTable{5,XCond}=SumStats(SumStatLine).VPM_p_base_cond12;
+SumStatTable{8,XCond}=SumStats(SumStatLine).VPM_p_resp_cond12;
+SumStatTable{16+3,XCond}=SumStats(SumStatLine).POm_mean_cond1_base;
+SumStatTable{16+4,XCond}=SumStats(SumStatLine).POm_sem_cond1_base;
+SumStatTable{16+6,XCond}=SumStats(SumStatLine).POm_mean_cond1_resp;
+SumStatTable{16+7,XCond}=SumStats(SumStatLine).POm_sem_cond1_resp;
+SumStatTable{16+9,XCond}=SumStats(SumStatLine).POm_p_cond1;
+SumStatTable{16+3,XCond+1}=SumStats(SumStatLine).POm_mean_cond2_base;
+SumStatTable{16+4,XCond+1}=SumStats(SumStatLine).POm_sem_cond2_base;
+SumStatTable{16+6,XCond+1}=SumStats(SumStatLine).POm_mean_cond2_resp;
+SumStatTable{16+7,XCond+1}=SumStats(SumStatLine).POm_sem_cond2_resp;
+SumStatTable{16+9,XCond+1}=SumStats(SumStatLine).POm_p_cond2;
+SumStatTable{16+5,XCond}=SumStats(SumStatLine).POm_p_base_cond12;
+SumStatTable{16+8,XCond}=SumStats(SumStatLine).POm_p_resp_cond12;
+SumStatTable{10,XCond}=SumStats(SumStatLine).VPM_mean_modulation_cond1;
+SumStatTable{11,XCond}=SumStats(SumStatLine).VPM_sem_modulation_cond1;
+SumStatTable{12,XCond}=SumStats(SumStatLine).VPM_p_modulation_cond10;
+SumStatTable{10,XCond+1}=SumStats(SumStatLine).VPM_mean_modulation_cond2;
+SumStatTable{11,XCond+1}=SumStats(SumStatLine).VPM_sem_modulation_cond2;
+SumStatTable{12,XCond+1}=SumStats(SumStatLine).VPM_p_modulation_cond20;
+SumStatTable{13,XCond}=SumStats(SumStatLine).VPM_p_modulation_cond12;
+SumStatTable{16+10,XCond}=SumStats(SumStatLine).POm_mean_modulation_cond1;
+SumStatTable{16+11,XCond}=SumStats(SumStatLine).POm_sem_modulation_cond1;
+SumStatTable{16+12,XCond}=SumStats(SumStatLine).POm_p_modulation_cond10;
+SumStatTable{16+10,XCond+1}=SumStats(SumStatLine).POm_mean_modulation_cond2;
+SumStatTable{16+11,XCond+1}=SumStats(SumStatLine).POm_sem_modulation_cond2;
+SumStatTable{16+12,XCond+1}=SumStats(SumStatLine).POm_p_modulation_cond20;
+SumStatTable{16+13,XCond}=SumStats(SumStatLine).POm_p_modulation_cond12;
+SumStatTable{36,XCond}=SumStats(SumStatLine).VPMPOm_p_modulation_cond1;
+SumStatTable{36,XCond+1}=SumStats(SumStatLine).VPMPOm_p_modulation_cond2;
+SumStatTable{34,XCond}=SumStats(SumStatLine).VPMPOm_p_cond1_base;
+SumStatTable{34,XCond+1}=SumStats(SumStatLine).VPMPOm_p_cond2_base;
+SumStatTable{35,XCond}=SumStats(SumStatLine).VPMPOm_p_cond1_resp;
+SumStatTable{35,XCond+1}=SumStats(SumStatLine).VPMPOm_p_cond2_resp;
+SumStatTable{14,XCond}=SumStats(SumStatLine).VPM_mean_fsl_cond1;
+SumStatTable{15,XCond}=SumStats(SumStatLine).VPM_sem_fsl_cond1;
+SumStatTable{14,XCond+1}=SumStats(SumStatLine).VPM_mean_fsl_cond2;
+SumStatTable{15,XCond+1}=SumStats(SumStatLine).VPM_sem_fsl_cond2;
+SumStatTable{16,XCond}=SumStats(SumStatLine).VPM_p_fsl_cond12;
+SumStatTable{16+14,XCond}=SumStats(SumStatLine).POm_mean_fsl_cond1;
+SumStatTable{16+15,XCond}=SumStats(SumStatLine).POm_sem_fsl_cond1;
+SumStatTable{16+14,XCond+1}=SumStats(SumStatLine).POm_mean_fsl_cond2;
+SumStatTable{16+15,XCond+1}=SumStats(SumStatLine).POm_sem_fsl_cond2;
+SumStatTable{16+16,XCond}=SumStats(SumStatLine).POm_p_fsl_cond12;
+SumStatTable{37,XCond}=SumStats(SumStatLine).VPMPOm_p_fsl_cond1;
+SumStatTable{37,XCond+1}=SumStats(SumStatLine).VPMPOm_p_fsl_cond2;
 % 
 % figure('Position',[ 910   176   500   588])
 % plot_ratecomp2(FSLstd,FSLsig,{'Puff','Touch'},{vpmr;pomr},{'VPM';'POm'},'mean','std first spike latency (ms)');title('std first spike latency')
@@ -886,7 +1130,7 @@ SumStats(SumStatLine).VPMPOm_p_fsl_cond2=pC(2);
 % if write_figs;exportgraphics (gcf,[figdir Fig_no 'responseprobability.pdf'],'BackgroundColor','none','ContentType','vector');end
 
 
-% Figure 4
+%% Figure 4
 split_time_before_trig=50;%ms
 split_time_after_trig=50;%ms
 split_safety_margin=150;%time_after_trig;
@@ -903,10 +1147,16 @@ split_var_nameC={'Acceleration';'Curvature';'Interval';'Velocity';'Setp';'Amp';'
 type_nameC={'rawbefore','rawafter','absbefore','absafter','rel','absrel'};
 split_allR=true;%[true;false];%
 
-[RasterHP,RasterHT]=split_kinematics(split_time_before_trig,split_time_after_trig,split_safety_margin,Wdname,split_binsize,smoothwidth,meth,binsR,...
-    selc,splits,splitname,DiscreteData,ppms,split_var_nameC,type_nameC,split_allR,figdir,Angle,Setp,Amp,Phase);
+[RasterHP,RasterHT,~,~,splitPlotValues]=split_kinematics(split_time_before_trig,split_time_after_trig,split_safety_margin,Wdname,split_binsize,smoothwidth,meth,binsR,...
+    selc,splits,splitname,DiscreteData,ppms,split_var_nameC,type_nameC,split_allR,figdir,TrialWp,TrialWt,Amp,Phase,Angle,Setp);
+splitPlotValuesNames={'kinematic param','normalization', 'tertile cutoffs' ,...
+    'vpm puff means', 'vpm puff sem','vpm p(puff=0)' ,'vpm touch means', 'vpm touch sem','vpm p(touch=0)','vpm p puff vs touch','vpm puff/touch p 1 vs 3',...
+'pom puff means', 'pom puff sem','pom p(puff=0)','pom touch means', 'pom touch sem','pom p(touch=0)','pom p puff vs touch','pom puff/touch p 1 vs 3'};
+%%
+SplitTable=cell2table(splitPlotValues,'VariableNames',splitPlotValuesNames);
 
-% Figure 5
+writetable(SplitTable,'C:\Data\Whisker\splitstats.xlsx')
+%% Figure 5
 Fig_no='Fig5_';
 vpmL=vpm(hasLight(vpm));
 pomL=pom(hasLight(pom));
@@ -917,10 +1167,18 @@ SumStats(SumStatLine).condition_1='whisking no Light';
 SumStats(SumStatLine).condition_2='whisking Light';
 SumStats(SumStatLine).VPM_cell_IDs=vpmrLa';
 SumStats(SumStatLine).POm_cell_IDs=pomrLa';
+[N_animals]=get_N_animals(SumStats(SumStatLine).VPM_cell_IDs,SumStats(SumStatLine).POm_cell_IDs,RecDB);
 SumStats(SumStatLine).VPM_N=numel(vpmrLa);
+SumStats(SumStatLine).VPM_N_animals=N_animals(3);
 SumStats(SumStatLine).POm_N=numel(pomrLa);
-
-
+SumStats(SumStatLine).POm_N_animals=N_animals(4);
+SumStats(SumStatLine).Total_N_animals=N_animals(1);
+C=11;
+SumStatTable{1,C}=SumStats(SumStatLine).VPM_N;
+SumStatTable{2,C}=SumStats(SumStatLine).VPM_N_animals;
+SumStatTable{17,C}=SumStats(SumStatLine).POm_N;
+SumStatTable{18,C}=SumStats(SumStatLine).POm_N_animals;
+SumStatTable{33,C}=SumStats(SumStatLine).Total_N_animals;
 
 outsafety=200;%ms
 insafety=25;
@@ -954,7 +1212,7 @@ SumStats(SumStatLine).VPM_sem_cond2_resp=mS(2,2,2);
 SumStats(SumStatLine).VPM_p_cond2=pI(2);
 SumStats(SumStatLine).VPM_p_base_cond12=pC(1);
 SumStats(SumStatLine).VPM_p_resp_cond12=pC(2);
-
+%%
 figure('Position',[ 910   176   500   588])
 [pI,pC,mS]=plot_ratecomp3(cat(3,cat(2,RatesQ,RatesW),cat(2,RatesQL,RatesWL)),cat(2,abs(RatesWp)<.05,abs(RatesWLp)<.05),{'Q';'W';'QL';'WL'},pomrLa,{'nL';'L'},'mean','Rate (Hz)');
 title('POm Whisking Rate nL/L, responsive cells w Light')
@@ -972,6 +1230,102 @@ SumStats(SumStatLine).POm_sem_cond2_resp=mS(2,2,2);
 SumStats(SumStatLine).POm_p_cond2=pI(2);
 SumStats(SumStatLine).POm_p_base_cond12=pC(1);
 SumStats(SumStatLine).POm_p_resp_cond12=pC(2);
+
+pRcL=nan(2,2);
+HR_nL=cat(2,RatesQ,RatesW);
+for c=1:2
+pRcL(1,c)=ranksum(HR_nL(vpmrLa,c),HR_nL(pomrLa,c));
+end
+HR_L=cat(2,RatesQL,RatesWL);
+for c=1:2
+pRcL(2,c)=ranksum(HR_L(vpmrLa,c),HR_L(pomrLa,c));
+end
+
+SumStats(SumStatLine).VPMPOm_p_cond1_base=pRcL(1,1);
+SumStats(SumStatLine).VPMPOm_p_cond2_base=pRcL(2,1);
+SumStats(SumStatLine).VPMPOm_p_cond1_resp=pRcL(1,2);
+SumStats(SumStatLine).VPMPOm_p_cond2_resp=pRcL(2,2);
+
+
+MD_spontWhiskL=cat(2,mod_depth(RatesQ,RatesQL),mod_depth(RatesW,RatesWL));
+figure('Position',[ 910   176   500   588])
+[pI,pC,mS,p0]=plot_ratecomp2(MD_spontWhiskL,RatesWLp<.05,{'Q nL vs L','W nL vs L'},{vpmrLa;pomrLa},{'VPM';'POm'},'mean','mod depth');title('Whisking light modulation, responsive cells')
+
+ if write_figs;exportgraphics (gcf,[figdir Fig_no 'modulationLightWhiskingRespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
+
+MD_spontWhiskL2=cat(2,mod_depth(RatesQ,RatesW),mod_depth(RatesQL,RatesWL));
+figure('Position',[ 910   176   500   588])
+[pI,pC,mS,p0]=plot_ratecomp2(MD_spontWhiskL2,RatesWLp<.05,{'nL: Q vs W','L: Q vs W'},{vpmrLa;pomrLa},{'VPM';'POm'},'mean','mod depth');title('Whisking light modulation, responsive cells')
+
+ if write_figs;exportgraphics (gcf,[figdir Fig_no 'modulationWhisking_respectiveLightRespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
+
+
+
+
+SumStats(SumStatLine).VPM_mean_modulation_cond1=mS(1,1,1);
+SumStats(SumStatLine).VPM_sem_modulation_cond1=mS(1,1,2);
+SumStats(SumStatLine).VPM_p_modulation_cond10=p0(1,1);
+SumStats(SumStatLine).VPM_mean_modulation_cond2=mS(1,2,1);
+SumStats(SumStatLine).VPM_sem_modulation_cond2=mS(1,2,2);
+SumStats(SumStatLine).VPM_p_modulation_cond20=p0(1,2);
+SumStats(SumStatLine).VPM_p_modulation_cond12=pI(1);
+
+SumStats(SumStatLine).POm_mean_modulation_cond1=mS(2,1,1);
+SumStats(SumStatLine).POm_sem_modulation_cond1=mS(2,1,2);
+SumStats(SumStatLine).POm_p_modulation_cond10=p0(2,1);
+SumStats(SumStatLine).POm_mean_modulation_cond2=mS(2,2,1);
+SumStats(SumStatLine).POm_sem_modulation_cond2=mS(2,2,2);
+SumStats(SumStatLine).POm_p_modulation_cond20=p0(2,2);
+SumStats(SumStatLine).POm_p_modulation_cond12=pI(2);
+
+SumStats(SumStatLine).VPMPOm_p_modulation_cond1=pC(1);
+SumStats(SumStatLine).VPMPOm_p_modulation_cond2=pC(2);
+
+XCond=11;
+SumStatTable{3,XCond}=SumStats(SumStatLine).VPM_mean_cond1_base;
+SumStatTable{4,XCond}=SumStats(SumStatLine).VPM_sem_cond1_base;
+SumStatTable{6,XCond}=SumStats(SumStatLine).VPM_mean_cond1_resp;
+SumStatTable{7,XCond}=SumStats(SumStatLine).VPM_sem_cond1_resp;
+SumStatTable{9,XCond}=SumStats(SumStatLine).VPM_p_cond1;
+SumStatTable{3,XCond+1}=SumStats(SumStatLine).VPM_mean_cond2_base;
+SumStatTable{4,XCond+1}=SumStats(SumStatLine).VPM_sem_cond2_base;
+SumStatTable{6,XCond+1}=SumStats(SumStatLine).VPM_mean_cond2_resp;
+SumStatTable{7,XCond+1}=SumStats(SumStatLine).VPM_sem_cond2_resp;
+SumStatTable{9,XCond+1}=SumStats(SumStatLine).VPM_p_cond2;
+SumStatTable{5,XCond}=SumStats(SumStatLine).VPM_p_base_cond12;
+SumStatTable{8,XCond}=SumStats(SumStatLine).VPM_p_resp_cond12;
+SumStatTable{16+3,XCond}=SumStats(SumStatLine).POm_mean_cond1_base;
+SumStatTable{16+4,XCond}=SumStats(SumStatLine).POm_sem_cond1_base;
+SumStatTable{16+6,XCond}=SumStats(SumStatLine).POm_mean_cond1_resp;
+SumStatTable{16+7,XCond}=SumStats(SumStatLine).POm_sem_cond1_resp;
+SumStatTable{16+9,XCond}=SumStats(SumStatLine).POm_p_cond1;
+SumStatTable{16+3,XCond+1}=SumStats(SumStatLine).POm_mean_cond2_base;
+SumStatTable{16+4,XCond+1}=SumStats(SumStatLine).POm_sem_cond2_base;
+SumStatTable{16+6,XCond+1}=SumStats(SumStatLine).POm_mean_cond2_resp;
+SumStatTable{16+7,XCond+1}=SumStats(SumStatLine).POm_sem_cond2_resp;
+SumStatTable{16+9,XCond+1}=SumStats(SumStatLine).POm_p_cond2;
+SumStatTable{16+5,XCond}=SumStats(SumStatLine).POm_p_base_cond12;
+SumStatTable{16+8,XCond}=SumStats(SumStatLine).POm_p_resp_cond12;
+SumStatTable{10,XCond}=SumStats(SumStatLine).VPM_mean_modulation_cond1;
+SumStatTable{11,XCond}=SumStats(SumStatLine).VPM_sem_modulation_cond1;
+SumStatTable{12,XCond}=SumStats(SumStatLine).VPM_p_modulation_cond10;
+SumStatTable{10,XCond+1}=SumStats(SumStatLine).VPM_mean_modulation_cond2;
+SumStatTable{11,XCond+1}=SumStats(SumStatLine).VPM_sem_modulation_cond2;
+SumStatTable{12,XCond+1}=SumStats(SumStatLine).VPM_p_modulation_cond20;
+SumStatTable{13,XCond}=SumStats(SumStatLine).VPM_p_modulation_cond12;
+SumStatTable{16+10,XCond}=SumStats(SumStatLine).POm_mean_modulation_cond1;
+SumStatTable{16+11,XCond}=SumStats(SumStatLine).POm_sem_modulation_cond1;
+SumStatTable{16+12,XCond}=SumStats(SumStatLine).POm_p_modulation_cond10;
+SumStatTable{16+10,XCond+1}=SumStats(SumStatLine).POm_mean_modulation_cond2;
+SumStatTable{16+11,XCond+1}=SumStats(SumStatLine).POm_sem_modulation_cond2;
+SumStatTable{16+12,XCond+1}=SumStats(SumStatLine).POm_p_modulation_cond20;
+SumStatTable{16+13,XCond}=SumStats(SumStatLine).POm_p_modulation_cond12;
+SumStatTable{36,XCond}=SumStats(SumStatLine).VPMPOm_p_modulation_cond1;
+SumStatTable{36,XCond+1}=SumStats(SumStatLine).VPMPOm_p_modulation_cond2;
+SumStatTable{34,XCond}=SumStats(SumStatLine).VPMPOm_p_cond1_base;
+SumStatTable{34,XCond+1}=SumStats(SumStatLine).VPMPOm_p_cond2_base;
+SumStatTable{35,XCond}=SumStats(SumStatLine).VPMPOm_p_cond1_resp;
+SumStatTable{35,XCond+1}=SumStats(SumStatLine).VPMPOm_p_cond2_resp;
 
 
 exclude={'Pole';'Exclude';'Grooming';'Puff'};
@@ -1066,6 +1420,18 @@ SumStats(SumStatLine).VPM_cell_IDs=vpmrLa';
 SumStats(SumStatLine).POm_cell_IDs=pomrLa';
 SumStats(SumStatLine).VPM_N=numel(vpmrLa);
 SumStats(SumStatLine).POm_N=numel(pomrLa);
+[N_animals]=get_N_animals(SumStats(SumStatLine).VPM_cell_IDs,SumStats(SumStatLine).POm_cell_IDs,RecDB);
+SumStats(SumStatLine).VPM_N=numel(vpmrLa);
+SumStats(SumStatLine).VPM_N_animals=N_animals(3);
+SumStats(SumStatLine).POm_N=numel(pomrLa);
+SumStats(SumStatLine).POm_N_animals=N_animals(4);
+SumStats(SumStatLine).Total_N_animals=N_animals(1);
+C=9;
+SumStatTable{1,C}=SumStats(SumStatLine).VPM_N;
+SumStatTable{2,C}=SumStats(SumStatLine).VPM_N_animals;
+SumStatTable{17,C}=SumStats(SumStatLine).POm_N;
+SumStatTable{18,C}=SumStats(SumStatLine).POm_N_animals;
+SumStatTable{33,C}=SumStats(SumStatLine).Total_N_animals;
 % 
 % 
 % figure('Position',[38 260 1413 525],'Color','White');Name='PuffLPop';
@@ -1139,27 +1505,42 @@ figure('Position',[ 910   176   500   588])
 plot_ratecomp2(tempD,sig_Touch,{'noLPuff','LPuff'},{vpmrLa;pomrLa},{'VPM';'POm'},'mean','Rate fold change');title('nL/L Puff fold change Response, responsive cells')
 if write_figs;exportgraphics (gcf,[figdir Fig_no 'foldchangeRates_nLL_RespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
+
+tempD=cat(2,mod_depth(H_P),mod_depth(H_PL));
+figure('Position',[ 910   176   500   588])
+[pI,pC,mS,p0]=plot_ratecomp2(tempD,true(size(sig_Touch)),{'noLPuff','LPuff'},{vpmrLa;pomrLa},{'VPM';'POm'},'mean','mod depth');title('nL/L Puff modulation, responsive cells')
+ if write_figs;exportgraphics (gcf,[figdir Fig_no 'modulation_nLL_RespondingCellsLog.pdf'], 'BackgroundColor','none','ContentType','vector');end
+
+
 tempD=cat(2,H_P(:,2)./H_P(:,1),H_PL(:,2)./H_PL(:,1));tempD(any(isnan(tempD),2),:)=nan;
 figure('Position',[ 910   176   500   588])
-[pI,pC,mS]=plot_ratecomp2(tempD,sig_Touch,{'noLPuff','LPuff'},{vpmrLa;pomrLa},{'VPM';'POm'},'mean','Rate fold change');title('nL/L Puff fold change Response, responsive cells')
-if write_figs;exportgraphics (gcf,[figdir Fig_no 'foldchangeRates_nolog_nLL_RespondingCells.pdf'], 'BackgroundColor','none','ContentType','vector');end
+plot_ratecomp2(tempD,true(size(sig_Touch)),{'noLPuff','LPuff'},{vpmrLa;pomrLa},{'VPM';'POm'},'mean','Rate fold change');title('nL/L Puff fold change Response, responsive cells')
+ set(gca,'YScale','log')
+ set(gca,'YTick',[0.05 0.1 0.25 0.5 1 2 4 8 16 32 50 100])
+ ylim([0.05 120])
+
+if write_figs;exportgraphics (gcf,[figdir Fig_no 'foldchangeRates_nLL_RespondingCellsLOG.pdf'], 'BackgroundColor','none','ContentType','vector');end
 
 
  
-SumStats(SumStatLine).VPM_mean_foldchange_cond1=mS(1,1,1);
-SumStats(SumStatLine).VPM_sem_foldchange_cond1=mS(1,1,2);
-SumStats(SumStatLine).VPM_mean_foldchange_cond2=mS(1,2,1);
-SumStats(SumStatLine).VPM_sem_foldchange_cond2=mS(1,2,2);
-SumStats(SumStatLine).VPM_p_foldchange_cond12=pI(1);
+SumStats(SumStatLine).VPM_mean_modulation_cond1=mS(1,1,1);
+SumStats(SumStatLine).VPM_sem_modulation_cond1=mS(1,1,2);
+SumStats(SumStatLine).VPM_p_modulation_cond10=p0(1,1);
+SumStats(SumStatLine).VPM_mean_modulation_cond2=mS(1,2,1);
+SumStats(SumStatLine).VPM_sem_modulation_cond2=mS(1,2,2);
+SumStats(SumStatLine).VPM_p_modulation_cond20=p0(1,2);
+SumStats(SumStatLine).VPM_p_modulation_cond12=pI(1);
 
-SumStats(SumStatLine).POm_mean_foldchange_cond1=mS(2,1,1);
-SumStats(SumStatLine).POm_sem_foldchange_cond1=mS(2,1,2);
-SumStats(SumStatLine).POm_mean_foldchange_cond2=mS(2,2,1);
-SumStats(SumStatLine).POm_sem_foldchange_cond2=mS(2,2,2);
-SumStats(SumStatLine).POm_p_foldchange_cond12=pI(2);
+SumStats(SumStatLine).POm_mean_modulation_cond1=mS(2,1,1);
+SumStats(SumStatLine).POm_sem_modulation_cond1=mS(2,1,2);
+SumStats(SumStatLine).POm_p_modulation_cond10=p0(2,1);
+SumStats(SumStatLine).POm_mean_modulation_cond2=mS(2,2,1);
+SumStats(SumStatLine).POm_sem_modulation_cond2=mS(2,2,2);
+SumStats(SumStatLine).POm_p_modulation_cond20=p0(2,2);
+SumStats(SumStatLine).POm_p_modulation_cond12=pI(2);
 
-SumStats(SumStatLine).VPMPOm_p_foldchange_cond1=pC(1);
-SumStats(SumStatLine).VPMPOm_p_foldchange_cond2=pC(2);
+SumStats(SumStatLine).VPMPOm_p_modulation_cond1=pC(1);
+SumStats(SumStatLine).VPMPOm_p_modulation_cond2=pC(2);
 
 
 % 
@@ -1266,3 +1647,74 @@ SumStats(SumStatLine).POm_p_fsl_cond12=pI(2);
 
 SumStats(SumStatLine).VPMPOm_p_fsl_cond1=pC(1);
 SumStats(SumStatLine).VPMPOm_p_fsl_cond2=pC(2);
+
+XCond=9;
+SumStatTable{3,XCond}=SumStats(SumStatLine).VPM_mean_cond1_base;
+SumStatTable{4,XCond}=SumStats(SumStatLine).VPM_sem_cond1_base;
+SumStatTable{6,XCond}=SumStats(SumStatLine).VPM_mean_cond1_resp;
+SumStatTable{7,XCond}=SumStats(SumStatLine).VPM_sem_cond1_resp;
+SumStatTable{9,XCond}=SumStats(SumStatLine).VPM_p_cond1;
+SumStatTable{3,XCond+1}=SumStats(SumStatLine).VPM_mean_cond2_base;
+SumStatTable{4,XCond+1}=SumStats(SumStatLine).VPM_sem_cond2_base;
+SumStatTable{6,XCond+1}=SumStats(SumStatLine).VPM_mean_cond2_resp;
+SumStatTable{7,XCond+1}=SumStats(SumStatLine).VPM_sem_cond2_resp;
+SumStatTable{9,XCond+1}=SumStats(SumStatLine).VPM_p_cond2;
+SumStatTable{5,XCond}=SumStats(SumStatLine).VPM_p_base_cond12;
+SumStatTable{8,XCond}=SumStats(SumStatLine).VPM_p_resp_cond12;
+SumStatTable{16+3,XCond}=SumStats(SumStatLine).POm_mean_cond1_base;
+SumStatTable{16+4,XCond}=SumStats(SumStatLine).POm_sem_cond1_base;
+SumStatTable{16+6,XCond}=SumStats(SumStatLine).POm_mean_cond1_resp;
+SumStatTable{16+7,XCond}=SumStats(SumStatLine).POm_sem_cond1_resp;
+SumStatTable{16+9,XCond}=SumStats(SumStatLine).POm_p_cond1;
+SumStatTable{16+3,XCond+1}=SumStats(SumStatLine).POm_mean_cond2_base;
+SumStatTable{16+4,XCond+1}=SumStats(SumStatLine).POm_sem_cond2_base;
+SumStatTable{16+6,XCond+1}=SumStats(SumStatLine).POm_mean_cond2_resp;
+SumStatTable{16+7,XCond+1}=SumStats(SumStatLine).POm_sem_cond2_resp;
+SumStatTable{16+9,XCond+1}=SumStats(SumStatLine).POm_p_cond2;
+SumStatTable{16+5,XCond}=SumStats(SumStatLine).POm_p_base_cond12;
+SumStatTable{16+8,XCond}=SumStats(SumStatLine).POm_p_resp_cond12;
+SumStatTable{10,XCond}=SumStats(SumStatLine).VPM_mean_modulation_cond1;
+SumStatTable{11,XCond}=SumStats(SumStatLine).VPM_sem_modulation_cond1;
+SumStatTable{12,XCond}=SumStats(SumStatLine).VPM_p_modulation_cond10;
+SumStatTable{10,XCond+1}=SumStats(SumStatLine).VPM_mean_modulation_cond2;
+SumStatTable{11,XCond+1}=SumStats(SumStatLine).VPM_sem_modulation_cond2;
+SumStatTable{12,XCond+1}=SumStats(SumStatLine).VPM_p_modulation_cond20;
+SumStatTable{13,XCond}=SumStats(SumStatLine).VPM_p_modulation_cond12;
+SumStatTable{16+10,XCond}=SumStats(SumStatLine).POm_mean_modulation_cond1;
+SumStatTable{16+11,XCond}=SumStats(SumStatLine).POm_sem_modulation_cond1;
+SumStatTable{16+12,XCond}=SumStats(SumStatLine).POm_p_modulation_cond10;
+SumStatTable{16+10,XCond+1}=SumStats(SumStatLine).POm_mean_modulation_cond2;
+SumStatTable{16+11,XCond+1}=SumStats(SumStatLine).POm_sem_modulation_cond2;
+SumStatTable{16+12,XCond+1}=SumStats(SumStatLine).POm_p_modulation_cond20;
+SumStatTable{16+13,XCond}=SumStats(SumStatLine).POm_p_modulation_cond12;
+SumStatTable{36,XCond}=SumStats(SumStatLine).VPMPOm_p_modulation_cond1;
+SumStatTable{36,XCond+1}=SumStats(SumStatLine).VPMPOm_p_modulation_cond2;
+SumStatTable{34,XCond}=SumStats(SumStatLine).VPMPOm_p_cond1_base;
+SumStatTable{34,XCond+1}=SumStats(SumStatLine).VPMPOm_p_cond2_base;
+SumStatTable{35,XCond}=SumStats(SumStatLine).VPMPOm_p_cond1_resp;
+SumStatTable{35,XCond+1}=SumStats(SumStatLine).VPMPOm_p_cond2_resp;
+SumStatTable{14,XCond}=SumStats(SumStatLine).VPM_mean_fsl_cond1;
+SumStatTable{15,XCond}=SumStats(SumStatLine).VPM_sem_fsl_cond1;
+SumStatTable{14,XCond+1}=SumStats(SumStatLine).VPM_mean_fsl_cond2;
+SumStatTable{15,XCond+1}=SumStats(SumStatLine).VPM_sem_fsl_cond2;
+SumStatTable{16,XCond}=SumStats(SumStatLine).VPM_p_fsl_cond12;
+SumStatTable{16+14,XCond}=SumStats(SumStatLine).POm_mean_fsl_cond1;
+SumStatTable{16+15,XCond}=SumStats(SumStatLine).POm_sem_fsl_cond1;
+SumStatTable{16+14,XCond+1}=SumStats(SumStatLine).POm_mean_fsl_cond2;
+SumStatTable{16+15,XCond+1}=SumStats(SumStatLine).POm_sem_fsl_cond2;
+SumStatTable{16+16,XCond}=SumStats(SumStatLine).POm_p_fsl_cond12;
+SumStatTable{37,XCond}=SumStats(SumStatLine).VPMPOm_p_fsl_cond1;
+SumStatTable{37,XCond+1}=SumStats(SumStatLine).VPMPOm_p_fsl_cond2;
+%%
+% SST=struct2table(SumStats);
+% SST(:,'VPM_cell_IDs')=[];
+% SST(:,'POm_cell_IDs')=[];
+% writetable(SST,'sumstats.xlsx')
+%%
+
+writetable(SumStatTable,'C:\Data\Whisker\sumstats3.xlsx')
+%%
+
+singleCellTableNames={'NeuronID','Nucleus','AnimalID','VGAT','','','','','','','','','','','','','','','',''}
+
+

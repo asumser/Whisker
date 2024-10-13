@@ -1,8 +1,9 @@
-function [pI,pC,mS]=plot_ratecomp2(Rates,indiv_sig,RateLabels,CellTypes,CellTypeLabels,plotMeanStd,YlabelName)
+function [pI,pC,mS,p0]=plot_ratecomp2(Rates,indiv_sig,RateLabels,CellTypes,CellTypeLabels,plotMeanStd,YlabelName)
 %%
 %figure
 pI=nan(numel(CellTypeLabels),1);
 pC=nan(2,1);
+p0=nan(2,2);
 mS=nan(numel(CellTypeLabels),2,2);
 Rates_in=Rates;
 if size(Rates_in,3)>1
@@ -22,6 +23,8 @@ for CT=1:numel(CellTypeLabels)
     selRatesSig=indiv_sig(CellTypes{CT});
     
     [p]=signrank(selRates(~any(isnan(selRates),2),1),selRates(~any(isnan(selRates),2),2));
+    p0(CT,1)=signrank(selRates(~any(isnan(selRates),2),1));
+    p0(CT,2)=signrank(selRates(~any(isnan(selRates),2),2));
     if sum(selRatesSig)>0
     plot(off+[1:2],selRates(selRatesSig,:)','k'); hold on
     end
